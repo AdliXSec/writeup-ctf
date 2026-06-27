@@ -24,5 +24,12 @@ services:
     build: ./svg-viewer/chall
     container_name: ctf-svgviewer
     ports:
-      - "8080:80"
+      - "8888:80"
+    restart: unless-stopped
+
+  passforge:
+    build: ./passforge/chall
+    container_name: ctf-passforge
+    ports:
+      - "8120:8120"
     restart: unless-stopped

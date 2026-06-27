@@ -12,7 +12,7 @@ from flask import Flask, request, render_template_string
 
 app = Flask(__name__)
 
-FLAG = os.environ.get("FLAG", "foresty{_r_u_the_next_cve_hunter_a8cdaf}")
+FLAG = os.environ.get("FLAG", "LEEXY{_r_u_the_next_cve_hunter_a8cdaf}")
 BLOCKED_HOSTS = ["localhost", "127.0.0.1"]
 
 INDEX_HTML = """

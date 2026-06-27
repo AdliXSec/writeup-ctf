@@ -2,7 +2,7 @@ FROM python:3.12-slim
 
 WORKDIR /app
 
-RUN echo "foresty{_r_u_the_next_cve_hunter_a8cdaf}" > /flag.txt
+RUN echo "LEEXY{_r_u_the_next_cve_hunter_a8cdaf}" > /flag.txt
 
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt

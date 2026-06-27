@@ -1,0 +1,28 @@
+services:
+  fetcher:
+    build: ./fetcher/chall
+    container_name: ctf-fetcher
+    ports:
+      - "5000:5000"
+    restart: unless-stopped
+
+  nslookup:
+    build: ./nslookup/chall
+    container_name: ctf-nslookup
+    ports:
+      - "5001:5001"
+    restart: unless-stopped
+
+  gag-wiki:
+    build: ./gag-wiki/chall
+    container_name: ctf-gagwiki
+    ports:
+      - "5002:5002"
+    restart: unless-stopped
+
+  svg-viewer:
+    build: ./svg-viewer/chall
+    container_name: ctf-svgviewer
+    ports:
+      - "8080:80"
+    restart: unless-stopped

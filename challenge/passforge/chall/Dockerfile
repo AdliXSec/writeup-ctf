@@ -3,8 +3,8 @@ FROM python:3.12-slim
 WORKDIR /app
 
 # Flag dan proof file sesuai README
-RUN echo "LEEXY{passforge_placeholder_flag}" > /flag.txt && \
-    echo "PROOF{passforge_placeholder_proof}" > /proof.txt
+RUN echo "LEEXY{wow_ur_so_good_at_forging_hashes_567657}" > /flag.txt && \
+    echo "PROOF{wow_u_did_it_u_finally_forged_the_hashes_404}" > /proof.txt
 
 # State directory sesuai README: /opt/ad/state
 RUN mkdir -p /opt/ad/state

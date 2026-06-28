@@ -31,13 +31,22 @@ challenge/
 │   │   └── requirements.txt
 │   └── exploit/
 │       └── gagwiki_exploit.py
-└── svg-viewer/
-    ├── chall/                  # XXE Injection Challenge
-    │   ├── dashboard.php
-    │   ├── index.php
-    │   └── Dockerfile
-    └── exploit/
-        └── svgviewer_exploit.py
+├── svg-viewer/
+│   ├── chall/                  # XXE Injection Challenge
+│   │   ├── dashboard.php
+│   │   ├── index.php
+│   │   └── Dockerfile
+│   └── exploit/
+│       └── svgviewer_exploit.py
+├── passforge/
+│   ├── chall/
+│   │   ├── service.py
+│   │   ├── workspace.py
+│   │   ├── static/
+│   │   ├── Dockerfile
+│   │   └── requirements.txt
+│   └── exploit/
+│       └── passforge_exploit.py
 ```
 
 ---

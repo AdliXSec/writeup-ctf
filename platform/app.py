@@ -39,11 +39,16 @@ def init_db():
                 user_id INTEGER NOT NULL,
                 challenge_id TEXT NOT NULL,
                 flag_value TEXT NOT NULL,
+                tick INTEGER DEFAULT 1,
                 solved_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY(user_id) REFERENCES users(id),
                 UNIQUE(user_id, flag_value)
             );
         ''')
+        try:
+            conn.execute('ALTER TABLE solves ADD COLUMN tick INTEGER DEFAULT 1')
+        except sqlite3.OperationalError:
+            pass
     except sqlite3.OperationalError:
         pass
 
@@ -56,23 +61,6 @@ def get_current_flags():
                     key, val = line.strip().split('=', 1)
                     flags[key] = val
     return flags
-
-def get_ctf_start_time():
-    import time
-    start_file = '/app/data/start_time.txt'
-    if os.path.exists(start_file):
-        try:
-            with open(start_file, 'r') as f:
-                return float(f.read().strip())
-        except:
-            pass
-    now = time.time()
-    try:
-        with open(start_file, 'w') as f:
-            f.write(str(now))
-    except:
-        pass
-    return now
 
 # --- MIDDLEWARE JWT ---
 def jwt_required(f):
@@ -153,8 +141,8 @@ def api_challenges():
     
     chal_list = []
     for i, chal_id in enumerate(flags.keys()):
-        # Filter out proofs
-        if chal_id.startswith('PROOF_'): continue
+        # Filter out proofs and meta
+        if chal_id.startswith('PROOF_') or chal_id == 'CTF_TICK': continue
         
         chal_list.append({
             "id": i + 1,
@@ -173,9 +161,8 @@ def api_game_status():
     except:
         last_reset = time.time()
         
-    start_time = get_ctf_start_time()
-    elapsed_total = int(time.time() - start_time)
-    current_tick = max(1, (elapsed_total // 300) + 1)
+    flags = get_current_flags()
+    current_tick = int(flags.get('CTF_TICK', 1))
         
     return jsonify({
         "match": {
@@ -227,30 +214,21 @@ def api_scoreboard():
 def api_attacks():
     conn = get_db()
     query = '''
-        SELECT s.id, u.username, s.challenge_id, s.solved_at 
+        SELECT s.id, u.username, s.challenge_id, s.solved_at, s.tick 
         FROM solves s 
         JOIN users u ON s.user_id = u.id 
         ORDER BY s.solved_at DESC LIMIT 50
     '''
     rows = conn.execute(query).fetchall()
     
-    start_time = get_ctf_start_time()
-    
     items = []
     for row in rows:
-        try:
-            dt = datetime.datetime.strptime(row['solved_at'], "%Y-%m-%d %H:%M:%S").replace(tzinfo=datetime.timezone.utc)
-            solve_ts = dt.timestamp()
-            solve_tick = max(1, int((solve_ts - start_time) // 300) + 1)
-        except Exception as e:
-            solve_tick = 1
-            
         items.append({
             "id": f"solve-{row['id']}",
             "attacker": row['username'],
             "victim": "System",
             "service": row['challenge_id'].replace('FLAG_', '').lower(),
-            "tick": solve_tick,
+            "tick": row['tick'],
             "verdict": "first valid submission accepted"
         })
     return jsonify({
@@ -270,6 +248,8 @@ def api_submit():
         return jsonify({"type": "about:blank", "title": "Bad Request", "status": 400, "detail": "Expected array of flags"}), 400
         
     current_flags = get_current_flags()
+    current_tick = int(current_flags.get('CTF_TICK', 1))
+    
     results = []
     accepted = 0
     rejected = 0
@@ -284,8 +264,8 @@ def api_submit():
                 
         if solved_challenge_id:
             try:
-                conn.execute('INSERT INTO solves (user_id, challenge_id, flag_value) VALUES (?, ?, ?)', 
-                             (g.user['id'], solved_challenge_id, submitted_flag))
+                conn.execute('INSERT INTO solves (user_id, challenge_id, flag_value, tick) VALUES (?, ?, ?, ?)', 
+                             (g.user['id'], solved_challenge_id, submitted_flag, current_tick))
                 conn.commit()
                 results.append({
                     "flag": submitted_flag,

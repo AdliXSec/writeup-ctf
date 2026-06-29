@@ -84,5 +84,5 @@ services:
       - //var/run/docker.sock:/var/run/docker.sock
       - ./:/challenge
     working_dir: /challenge
-    command: /bin/sh auto_reset.sh
+    command: /bin/sh game_server.sh
     restart: unless-stopped

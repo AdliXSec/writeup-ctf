@@ -1,0 +1,66 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto mt-10">
+    <div class="glass rounded-xl p-8 shadow-2xl">
+        <h2 class="text-3xl font-bold mb-6 border-b border-slate-700 pb-4 text-emerald-400">Profile & Session</h2>
+        
+        <div id="profile-content" class="space-y-4">
+            <p class="text-center text-gray-400 py-8">Memuat profil...</p>
+        </div>
+    </div>
+</div>
+
+<script>
+async function loadProfile() {
+    if(!token) {
+        window.location.href = '/login';
+        return;
+    }
+    
+    try {
+        const res = await fetch('/api/v2/session', {
+            headers: { 'Authorization': 'Bearer ' + token }
+        });
+        
+        if(res.ok) {
+            const data = await res.json();
+            const html = `
+                <div class="grid grid-cols-3 gap-4 border-b border-slate-700/50 pb-4">
+                    <div class="text-gray-400 font-semibold">Player ID</div>
+                    <div class="col-span-2 text-white">${data.player_id}</div>
+                </div>
+                <div class="grid grid-cols-3 gap-4 border-b border-slate-700/50 pb-4">
+                    <div class="text-gray-400 font-semibold">Team ID</div>
+                    <div class="col-span-2 text-white">${data.team_id}</div>
+                </div>
+                <div class="grid grid-cols-3 gap-4 border-b border-slate-700/50 pb-4">
+                    <div class="text-gray-400 font-semibold">Team Name</div>
+                    <div class="col-span-2 font-bold text-sky-400">${data.team_name}</div>
+                </div>
+                <div class="grid grid-cols-3 gap-4 border-b border-slate-700/50 pb-4">
+                    <div class="text-gray-400 font-semibold">Display Name</div>
+                    <div class="col-span-2 text-white">${data.display_name}</div>
+                </div>
+                <div class="grid grid-cols-3 gap-4 border-b border-slate-700/50 pb-4">
+                    <div class="text-gray-400 font-semibold">Email</div>
+                    <div class="col-span-2 text-white">${data.email}</div>
+                </div>
+                <div class="grid grid-cols-3 gap-4 border-b border-slate-700/50 pb-4">
+                    <div class="text-gray-400 font-semibold">Role</div>
+                    <div class="col-span-2 text-white capitalize bg-emerald-500/20 text-emerald-400 px-3 py-1 rounded w-fit">${data.role}</div>
+                </div>
+            `;
+            document.getElementById('profile-content').innerHTML = html;
+        } else {
+            document.getElementById('profile-content').innerHTML = `<p class="text-center text-rose-500 py-8">Gagal memuat profil. Silakan login kembali.</p>`;
+        }
+    } catch(e) {
+        console.error(e);
+        document.getElementById('profile-content').innerHTML = `<p class="text-center text-rose-500 py-8">Terjadi kesalahan jaringan.</p>`;
+    }
+}
+
+document.addEventListener('DOMContentLoaded', loadProfile);
+</script>
+{% endblock %}

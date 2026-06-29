@@ -67,6 +67,9 @@ docker compose up --build -d
 | GaG Wiki    | 5002   | http://localhost:5002      | SQL Injection       |
 | SVG Viewer  | 8888   | http://localhost:8888      | XXE Injection       |
 | PassForge   | 8120   | http://localhost:8120      | SSTI Injection      |
+| Papermaker  | 8130   | http://localhost:8130      | YAML Deserialization|
+| Archivedesk | 8150   | http://localhost:8150      | Weak Crypto & IDOR  |
+| Betorganizer| 8140   | http://localhost:8140      | Race Condition      |
 
 ---
 
@@ -138,6 +141,24 @@ SSTI_PAYLOAD = (
 )
 ```
 - **Flag:** `LEEXY{passforge_placeholder_flag}`
+
+### 6. Papermaker (YAML Deserialization RCE)
+- **Kerentanan:** Ruby Object Injection via YAML.unsafe_load dan ERB Injection
+- **Deskripsi:** Endpoint konfigurasi membaca file YAML menggunakan API tidak aman yang memungkinkan eksekusi kode. Fitur log juga mengeksekusi nama file sebagai template ERB.
+- **Payload:** (Latihan Mandiri)
+- **Flag:** `LEEXY{papermaker_yaml_deserialization_rce_90192}`
+
+### 7. Archivedesk (Weak Crypto & IDOR)
+- **Kerentanan:** Token yang dapat ditebak (Insecure PRNG) dan Data Leakage via GORM
+- **Deskripsi:** Token reset password admin digenerate dari gabungan data yang dapat diketahui publik (ID, menit pembuatan, dan nonce publik). Endpoint API summary secara tidak sengaja me-load tabel relasi ResetRows.
+- **Payload:** (Latihan Mandiri)
+- **Flag:** `LEEXY{archivedesk_weak_crypto_idor_84109}`
+
+### 8. Betorganizer (Race Condition & SSTI)
+- **Kerentanan:** Time-of-Check to Time-of-Use (TOCTOU) dan Template Injection
+- **Deskripsi:** Endpoint klaim saldo tidak menggunakan *locking* yang tepat sehingga rentan diretas melalui request paralel. Fitur unggah badge dapat menimpa file template HTML karena path direktori yang salah.
+- **Payload:** (Latihan Mandiri)
+- **Flag:** `LEEXY{betorganizer_toctou_ssti_39103}`
 
 ---
 

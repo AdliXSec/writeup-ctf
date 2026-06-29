@@ -5,6 +5,8 @@ services:
     ports:
       - "5000:5000"
     restart: unless-stopped
+    environment:
+      - FLAG=${FLAG_FETCHER}
 
   nslookup:
     build: ./nslookup/chall
@@ -12,6 +14,8 @@ services:
     ports:
       - "5001:5001"
     restart: unless-stopped
+    environment:
+      - FLAG=${FLAG_NSLOOKUP}
 
   gag-wiki:
     build: ./gag-wiki/chall
@@ -19,6 +23,8 @@ services:
     ports:
       - "5002:5002"
     restart: unless-stopped
+    environment:
+      - FLAG=${FLAG_GAGWIKI}
 
   svg-viewer:
     build: ./svg-viewer/chall
@@ -26,10 +32,57 @@ services:
     ports:
       - "8888:80"
     restart: unless-stopped
+    environment:
+      - FLAG=${FLAG_SVG_VIEWER}
+    command: /bin/sh -c "echo $$FLAG > /flag.txt && apache2-foreground"
 
   passforge:
     build: ./passforge/chall
     container_name: ctf-passforge
     ports:
       - "8120:8120"
+    restart: unless-stopped
+    environment:
+      - FLAG=${FLAG_PASSFORGE}
+      - PROOF=${PROOF_PASSFORGE}
+    command: /bin/sh -c "echo $$FLAG > /flag.txt && echo $$PROOF > /proof.txt && python service.py"
+
+  papermaker:
+    build: ./papermaker/chall
+    container_name: ctf-papermaker
+    ports:
+      - "8130:8130"
+    restart: unless-stopped
+    environment:
+      - FLAG=${FLAG_PAPERMAKER}
+    command: /bin/sh -c "echo $$FLAG > /flag.txt && bundle exec rackup --host 0.0.0.0 -p 8130"
+
+  archivedesk:
+    build: ./archivedesk/chall
+    container_name: ctf-archivedesk
+    ports:
+      - "8150:8150"
+    environment:
+      - PORT=8150
+      - FLAG=${FLAG_ARCHIVEDESK}
+    restart: unless-stopped
+
+  betorganizer:
+    build: ./betorganizer/chall
+    container_name: ctf-betorganizer
+    ports:
+      - "8140:8140"
+    restart: unless-stopped
+    environment:
+      - FLAG=${FLAG_BETORGANIZER}
+    command: /bin/sh -c "echo $$FLAG > /flag.txt && ./betorganizer"
+
+  resetter:
+    image: docker:cli
+    container_name: ctf-resetter
+    volumes:
+      - //var/run/docker.sock:/var/run/docker.sock
+      - ./:/challenge
+    working_dir: /challenge
+    command: /bin/sh auto_reset.sh
     restart: unless-stopped

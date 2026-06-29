@@ -1,0 +1,13 @@
+services:
+  scoreboard:
+    build: .
+    container_name: ctf-scoreboard
+    ports:
+      - "8000:8000"
+    volumes:
+      - scoreboard_data:/app/data
+      - ../challenge/.env:/app/.env:ro
+    restart: unless-stopped
+
+volumes:
+  scoreboard_data:

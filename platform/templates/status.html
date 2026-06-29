@@ -1,0 +1,142 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto mt-10">
+    <div class="text-center mb-10">
+        <h1 class="text-4xl font-bold mb-3 text-fuchsia-400">Game Status</h1>
+        <p class="text-gray-400">Status Server CTF dan Scheduler secara Real-Time.</p>
+    </div>
+    
+    <div id="status-container" class="glass rounded-xl p-8 shadow-2xl">
+        <p class="text-center text-gray-400 py-8">Memuat status...</p>
+    </div>
+</div>
+
+<script>
+async function loadStatus() {
+    if(!token) {
+        window.location.href = '/login';
+        return;
+    }
+    
+    try {
+        const res = await fetch('/api/v2/game/status', {
+            headers: { 'Authorization': 'Bearer ' + token }
+        });
+        
+        if(res.ok) {
+            const data = await res.json();
+            
+            const matchStateColor = data.match.state === 'running' ? 'text-emerald-400' : 'text-rose-400';
+            const acceptSub = data.match.accepting_submissions ? '<span class="text-emerald-400">YES</span>' : '<span class="text-rose-400">NO</span>';
+            
+            const html = `
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <!-- Match Panel -->
+                    <div>
+                        <h2 class="text-xl font-bold border-b border-slate-700 pb-2 mb-4 text-white">Match Information</h2>
+                        <ul class="space-y-3">
+                            <li class="flex justify-between">
+                                <span class="text-gray-400">State</span>
+                                <span class="font-bold uppercase ${matchStateColor}">${data.match.state}</span>
+                            </li>
+                            <li class="flex justify-between">
+                                <span class="text-gray-400">Started At</span>
+                                <span class="text-sm text-white">${new Date(data.match.started_at).toLocaleString()}</span>
+                            </li>
+                            <li class="flex justify-between">
+                                <span class="text-gray-400">Accepting Submissions</span>
+                                <span class="font-bold">${acceptSub}</span>
+                            </li>
+                        </ul>
+                    </div>
+                    
+                    <!-- Scheduler Panel -->
+                    <div>
+                        <h2 class="text-xl font-bold border-b border-slate-700 pb-2 mb-4 text-white">Tick Scheduler</h2>
+                        <ul class="space-y-3">
+                            <li class="flex justify-between">
+                                <span class="text-gray-400">Scheduler State</span>
+                                <span class="font-bold text-sky-400 uppercase">${data.scheduler.state}</span>
+                            </li>
+                            <li class="flex justify-between">
+                                <span class="text-gray-400">Interval</span>
+                                <span class="text-white">${data.scheduler.interval_seconds} seconds</span>
+                            </li>
+                            <li class="flex justify-between">
+                                <span class="text-gray-400">Current Tick</span>
+                                <span class="text-fuchsia-400 font-bold text-lg">#${data.current_tick.id}</span>
+                            </li>
+                            <li class="flex justify-between items-center bg-slate-800 p-3 rounded mt-2 border border-slate-700">
+                                <span class="text-sky-400 font-bold">Auto Reset Countdown</span>
+                                <span id="countdown-timer" class="text-3xl font-mono font-bold text-white">--:--</span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <div class="mt-8 pt-4 border-t border-slate-700 text-center">
+                    <span class="text-xs text-gray-500 flex items-center justify-center gap-2">
+                        <span class="relative flex h-3 w-3">
+                          <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                          <span class="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
+                        </span>
+                        API Connection Stable
+                    </span>
+                </div>
+            `;
+            document.getElementById('status-container').innerHTML = html;
+            
+            // start countdown
+            if(data.scheduler && data.scheduler.last_reset_time) {
+                startCountdown(data.scheduler.last_reset_time);
+            }
+        } else {
+            document.getElementById('status-container').innerHTML = `<p class="text-center text-rose-500 py-8">Gagal memuat status.</p>`;
+        }
+    } catch(e) {
+        console.error(e);
+        document.getElementById('status-container').innerHTML = `<p class="text-center text-rose-500 py-8">Terjadi kesalahan jaringan.</p>`;
+    }
+}
+
+let countdownInterval;
+let targetResetTime = 0;
+
+function startCountdown(lastResetTime) {
+    if(countdownInterval) clearInterval(countdownInterval);
+    
+    // Pastikan membuang angka desimal dari python os.path.getmtime
+    targetResetTime = Math.floor(lastResetTime) + 300; 
+    
+    countdownInterval = setInterval(() => {
+        const now = Math.floor(Date.now() / 1000);
+        let diff = targetResetTime - now;
+        
+        if (diff <= 0) {
+            targetResetTime += 300;
+            diff = targetResetTime - now;
+        }
+        
+        const m = Math.floor(diff / 60).toString().padStart(2, '0');
+        const s = (diff % 60).toString().padStart(2, '0');
+        const el = document.getElementById('countdown-timer');
+        if(el) {
+            el.innerText = `${m}:${s}`;
+            if(diff <= 10) {
+                el.classList.add('text-rose-500');
+                el.classList.remove('text-white');
+            } else {
+                el.classList.add('text-white');
+                el.classList.remove('text-rose-500');
+            }
+        }
+    }, 1000);
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    loadStatus();
+    setInterval(loadStatus, 15000); // Auto refresh every 15s
+});
+</script>
+{% endblock %}

@@ -1,0 +1,71 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto mt-10">
+    <div class="text-center mb-10">
+        <h1 class="text-4xl font-bold mb-3 text-sky-400">Daftar Tantangan</h1>
+        <p class="text-gray-400">Tantangan yang saat ini sedang aktif (Live dari Server).</p>
+    </div>
+    
+    <div id="challenges-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <p class="col-span-full text-center text-gray-400 py-8">Memuat tantangan...</p>
+    </div>
+</div>
+
+<script>
+async function loadChallenges() {
+    if(!token) {
+        window.location.href = '/login';
+        return;
+    }
+    
+    try {
+        const res = await fetch('/api/v2/challenges', {
+            headers: { 'Authorization': 'Bearer ' + token }
+        });
+        
+        if(res.ok) {
+            const data = await res.json();
+            const container = document.getElementById('challenges-container');
+            
+            if(data.length === 0) {
+                container.innerHTML = `<p class="col-span-full text-center text-gray-500 py-8">Belum ada tantangan yang tersedia.</p>`;
+                return;
+            }
+            
+            let html = '';
+            data.forEach(chal => {
+                const sourceBadge = chal.has_source_download 
+                    ? `<span class="bg-indigo-500/20 text-indigo-400 text-xs px-2 py-1 rounded">Source Available</span>` 
+                    : `<span class="bg-gray-700/50 text-gray-400 text-xs px-2 py-1 rounded">No Source</span>`;
+                    
+                html += `
+                    <div class="glass rounded-xl p-6 shadow-lg hover:-translate-y-1 transition duration-300 border-t-2 border-sky-500">
+                        <div class="flex justify-between items-start mb-4">
+                            <h3 class="text-xl font-bold text-white uppercase">${chal.name}</h3>
+                            <span class="text-gray-500 text-sm">#${chal.id}</span>
+                        </div>
+                        <div class="mb-4">
+                            ${sourceBadge}
+                        </div>
+                        <div class="mb-4 flex items-center gap-2">
+                            <span class="text-xs text-gray-500 uppercase tracking-wider">Target Endpoint:</span>
+                            <span class="font-mono text-sm text-emerald-400 bg-slate-900 px-2 py-1 rounded select-all border border-slate-700">${chal.endpoint || 'Unknown'}</span>
+                        </div>
+                        <a href="/submit" class="inline-block mt-2 text-sm text-sky-400 hover:text-sky-300 hover:underline">Submit Flag &rarr;</a>
+                    </div>
+                `;
+            });
+            container.innerHTML = html;
+        } else {
+            document.getElementById('challenges-container').innerHTML = `<p class="col-span-full text-center text-rose-500 py-8">Gagal memuat daftar tantangan.</p>`;
+        }
+    } catch(e) {
+        console.error(e);
+        document.getElementById('challenges-container').innerHTML = `<p class="col-span-full text-center text-rose-500 py-8">Terjadi kesalahan jaringan.</p>`;
+    }
+}
+
+document.addEventListener('DOMContentLoaded', loadChallenges);
+</script>
+{% endblock %}

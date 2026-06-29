@@ -1,0 +1,127 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="text-center mb-10">
+    <h1 class="text-4xl font-bold mb-3">Live Scoreboard</h1>
+    <p class="text-gray-400">Peringkat tim secara real-time. Flag diperbarui setiap 5 menit!</p>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+    <!-- Scoreboard (2/3 width on large screens) -->
+    <div class="lg:col-span-2 glass rounded-xl overflow-hidden shadow-2xl h-fit">
+        <table class="w-full text-left border-collapse">
+            <thead>
+                <tr class="bg-slate-800/50 border-b border-slate-700">
+                    <th class="py-4 px-6 font-semibold">Rank</th>
+                    <th class="py-4 px-6 font-semibold">Team</th>
+                    <th class="py-4 px-6 font-semibold">Score</th>
+                </tr>
+            </thead>
+            <tbody id="scoreboard-body">
+                <tr><td colspan="3" class="py-8 text-center text-gray-500">Memuat klasemen...</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Global Solves (1/3 width on large screens) -->
+    <div class="glass rounded-xl p-6 shadow-2xl h-fit">
+        <h2 class="text-xl font-bold mb-4 border-b border-slate-700 pb-2">Global Solves</h2>
+        <div id="attacks-body" class="space-y-4 max-h-96 overflow-y-auto pr-2 custom-scrollbar">
+            <p class="text-gray-500 text-center py-4">Memuat riwayat...</p>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Custom scrollbar for attacks feed */
+.custom-scrollbar::-webkit-scrollbar { width: 6px; }
+.custom-scrollbar::-webkit-scrollbar-track { background: rgba(30, 41, 59, 0.5); border-radius: 4px; }
+.custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(56, 189, 248, 0.5); border-radius: 4px; }
+.custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(56, 189, 248, 0.8); }
+</style>
+
+<script>
+async function loadScoreboard() {
+    if(!token) {
+        document.getElementById('scoreboard-body').innerHTML = `<tr><td colspan="3" class="py-8 text-center text-gray-500">Silakan login untuk melihat klasemen.</td></tr>`;
+        return;
+    }
+    
+    try {
+        const res = await fetch('/api/v2/scoreboard', {
+            headers: { 'Authorization': 'Bearer ' + token }
+        });
+        if(res.ok) {
+            const data = await res.json();
+            const tbody = document.getElementById('scoreboard-body');
+            if(data.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="3" class="py-8 text-center text-gray-500">Belum ada tim yang mensubmit flag.</td></tr>`;
+                return;
+            }
+            
+            let html = '';
+            data.forEach((row, i) => {
+                const rankColor = i === 0 ? 'text-yellow-400' : 'text-gray-300';
+                html += `
+                    <tr class="border-b border-slate-700/50 hover:bg-slate-800/30 transition">
+                        <td class="py-4 px-6 font-bold ${rankColor}">#${row.rank}</td>
+                        <td class="py-4 px-6 text-lg">${row.team}</td>
+                        <td class="py-4 px-6 font-bold text-sky-400">${row.total} pts</td>
+                    </tr>
+                `;
+            });
+            tbody.innerHTML = html;
+        } else {
+            console.error('Failed to fetch scoreboard');
+        }
+    } catch(e) {
+        console.error(e);
+    }
+}
+
+async function loadAttacks() {
+    if(!token) {
+        document.getElementById('attacks-body').innerHTML = `<p class="text-gray-500 text-center py-4">Silakan login untuk melihat riwayat.</p>`;
+        return;
+    }
+    
+    try {
+        const res = await fetch('/api/v2/attacks', {
+            headers: { 'Authorization': 'Bearer ' + token }
+        });
+        if(res.ok) {
+            const data = await res.json();
+            const container = document.getElementById('attacks-body');
+            
+            if(data.items.length === 0) {
+                container.innerHTML = `<p class="text-gray-500 text-center py-4">Belum ada aktivitas.</p>`;
+                return;
+            }
+            
+            let html = '';
+            data.items.forEach(item => {
+                html += `
+                    <div class="bg-slate-800/50 p-3 rounded border border-slate-700 text-sm">
+                        <span class="text-emerald-400 font-bold">${item.attacker}</span> solved 
+                        <span class="text-sky-300">${item.service.toUpperCase()}</span>
+                    </div>
+                `;
+            });
+            container.innerHTML = html;
+        }
+    } catch(e) {
+        console.error(e);
+    }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    loadScoreboard();
+    loadAttacks();
+    // Refresh every 30 seconds
+    setInterval(() => {
+        loadScoreboard();
+        loadAttacks();
+    }, 30000);
+});
+</script>
+{% endblock %}

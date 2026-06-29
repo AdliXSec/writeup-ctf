@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CTF Scoreboard</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #0f172a; color: #f8fafc; }
+        .glass {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .gradient-text {
+            background: linear-gradient(to right, #38bdf8, #818cf8);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col">
+    <!-- Navbar -->
+    <nav class="glass sticky top-0 z-50">
+        <div class="max-w-6xl mx-auto px-4 py-4 flex justify-between items-center">
+            <a href="/" class="text-2xl font-bold gradient-text">CTF Platform</a>
+            <div id="navbar-links" class="space-x-4">
+                <!-- Dynamically populated by JS -->
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="flex-grow max-w-6xl mx-auto w-full px-4 py-8">
+        <!-- Dynamic Flash Messages -->
+        <div id="flash-container" class="mb-6 space-y-2"></div>
+
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer class="glass mt-auto py-6 text-center text-sm text-gray-500">
+        <p>CTF Platform &copy; 2026. Flags are dynamically rotating every 5 minutes.</p>
+    </footer>
+
+    <!-- Global App Logic -->
+    <script>
+        const token = localStorage.getItem('token');
+        
+        function showFlash(message, type='error') {
+            const container = document.getElementById('flash-container');
+            const div = document.createElement('div');
+            if(type === 'success') {
+                div.className = "bg-emerald-500/20 border border-emerald-500 text-emerald-400 px-4 py-3 rounded-lg";
+            } else {
+                div.className = "bg-rose-500/20 border border-rose-500 text-rose-400 px-4 py-3 rounded-lg";
+            }
+            div.textContent = message;
+            container.appendChild(div);
+            setTimeout(() => div.remove(), 5000);
+        }
+
+        function doLogout() {
+            localStorage.removeItem('token');
+            window.location.href = '/';
+        }
+
+        async function initNavbar() {
+            const nav = document.getElementById('navbar-links');
+            let html = `<a href="/" class="hover:text-sky-400 transition">Scoreboard</a>`;
+            
+            if(token) {
+                try {
+                    const res = await fetch('/api/v2/session', {
+                        headers: { 'Authorization': 'Bearer ' + token }
+                    });
+                    if(res.ok) {
+                        const data = await res.json();
+                        html += `
+                            <a href="/challenges" class="hover:text-sky-400 transition">Challenges</a>
+                            <a href="/status" class="hover:text-sky-400 transition">Status</a>
+                            <a href="/attacks" class="hover:text-sky-400 transition">Attacks Feed</a>
+                            <span class="text-gray-400 mx-1">|</span>
+                            <a href="/submit" class="hover:text-sky-400 transition font-semibold text-emerald-400">Submit Flag</a>
+                            <span class="text-gray-400 mx-1">|</span>
+                            <a href="/profile" class="text-sm hover:text-sky-400 transition">Hi, <b>${data.display_name}</b></a>
+                            <a href="javascript:void(0)" onclick="doLogout()" class="text-rose-400 hover:text-rose-300 transition text-sm ml-2">Logout</a>
+                        `;
+                    } else {
+                        // Invalid token
+                        localStorage.removeItem('token');
+                        html += `
+                            <a href="/login" class="hover:text-sky-400 transition">Login</a>
+                            <a href="/register" class="bg-sky-500 hover:bg-sky-600 text-white px-4 py-2 rounded-lg transition">Register</a>
+                        `;
+                    }
+                } catch(e) {
+                    console.error(e);
+                }
+            } else {
+                html += `
+                    <a href="/login" class="hover:text-sky-400 transition">Login</a>
+                    <a href="/register" class="bg-sky-500 hover:bg-sky-600 text-white px-4 py-2 rounded-lg transition">Register</a>
+                `;
+            }
+            nav.innerHTML = html;
+        }
+
+        document.addEventListener('DOMContentLoaded', initNavbar);
+    </script>
+</body>
+</html>

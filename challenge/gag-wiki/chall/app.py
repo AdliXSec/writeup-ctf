@@ -1,11 +1,4 @@
 #!/usr/bin/env python3
-"""
-GaG Wiki - SQL Injection Challenge
-Kerentanan: Parameter pencarian 'q' rentan SQL Injection karena
-query dibangun langsung dari input pengguna (string concatenation).
-Database: SQLite dengan tabel 'pages' dan 'users'.
-Flag tersimpan sebagai password di tabel users.
-"""
 import os
 import sqlite3
 from flask import Flask, request, render_template_string, g
@@ -165,8 +158,6 @@ def search():
 
     db = get_db()
     try:
-        # --- VULNERABLE: String concatenation dalam SQL query ---
-        # Input pengguna langsung dimasukkan ke query tanpa parameterized query
         sql = f"SELECT title, content, category FROM pages WHERE title LIKE '%{query}%' OR content LIKE '%{query}%'"
         cursor = db.execute(sql)
         results = [dict(row) for row in cursor.fetchall()]

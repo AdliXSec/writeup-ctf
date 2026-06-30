@@ -88,8 +88,8 @@ async function loadStatus() {
             document.getElementById('status-container').innerHTML = html;
             
             // start countdown
-            if(data.scheduler && data.scheduler.last_reset_time) {
-                startCountdown(data.scheduler.last_reset_time);
+            if(data.scheduler) {
+                startCountdown();
             }
         } else {
             document.getElementById('status-container').innerHTML = `<p class="text-center text-rose-500 py-8">Gagal memuat status.</p>`;
@@ -101,22 +101,14 @@ async function loadStatus() {
 }
 
 let countdownInterval;
-let targetResetTime = 0;
 
-function startCountdown(lastResetTime) {
+function startCountdown() {
     if(countdownInterval) clearInterval(countdownInterval);
-    
-    // Pastikan membuang angka desimal dari python os.path.getmtime
-    targetResetTime = Math.floor(lastResetTime) + 300; 
     
     countdownInterval = setInterval(() => {
         const now = Math.floor(Date.now() / 1000);
-        let diff = targetResetTime - now;
+        let diff = 300 - (now % 300);
         
-        if (diff <= 0) {
-            targetResetTime += 300;
-            diff = targetResetTime - now;
-        }
         
         const m = Math.floor(diff / 60).toString().padStart(2, '0');
         const s = (diff % 60).toString().padStart(2, '0');

@@ -3,6 +3,14 @@ Write-Host "    Starting Play IT 2026 CTF Platform       " -ForegroundColor Cyan
 Write-Host "=============================================" -ForegroundColor Cyan
 Write-Host ""
 
+# Ensure .env is a file, not a directory created by docker-compose
+if (Test-Path -Path "challenge\.env" -PathType Container) {
+    Remove-Item -Path "challenge\.env" -Recurse -Force
+}
+if (!(Test-Path -Path "challenge\.env" -PathType Leaf)) {
+    New-Item -Path "challenge\.env" -ItemType File -Force | Out-Null
+}
+
 Write-Host "[1/2] Building and Starting Challenges & Game Server..." -ForegroundColor Yellow
 Push-Location -Path "challenge"
 docker compose build

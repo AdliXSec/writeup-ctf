@@ -1,26 +1,13 @@
 <?php
-/**
- * SVG Viewer - XXE Injection Challenge
- * 
- * Kerentanan: Parser XML memuat entitas eksternal (LIBXML_NOENT | LIBXML_DTDLOAD)
- * memungkinkan attacker membuat file SVG berbahaya dengan payload XXE
- * untuk membaca file lokal seperti /flag.txt.
- * 
- * Fitur tambahan: Direktori .git terekspos, memungkinkan attacker
- * mengunduh source code dan menemukan kerentanan.
- */
-
 $uploadDir = __DIR__ . '/uploads/';
 
 if (!is_dir($uploadDir)) {
     mkdir($uploadDir, 0777, true);
 }
 
-// ── Handle Upload ──
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['svg'])) {
     $file = $_FILES['svg'];
     
-    // Cek ekstensi
     $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
     if ($ext !== 'svg') {
         $error = "Only SVG files are allowed!";
@@ -39,7 +26,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['svg'])) {
     }
 }
 
-// ── Handle View ──
 $svgContent = null;
 $svgTitle = null;
 $viewError = null;
@@ -49,9 +35,6 @@ if (isset($_GET['view'])) {
     $path = "$uploadDir/$file";
     
     if (file_exists($path)) {
-        // ── KERENTANAN: LIBXML_NOENT mengaktifkan entity expansion ──
-        // LIBXML_DTDLOAD mengizinkan loading DTD eksternal
-        // Ini memungkinkan serangan XXE!
         libxml_use_internal_errors(true);
         
         $dom = new DOMDocument();
@@ -60,15 +43,12 @@ if (isset($_GET['view'])) {
         } else {
             $errors = libxml_get_errors();
             foreach ($errors as $xmlError) {
-                // Log errors tapi tetap lanjut
             }
             libxml_clear_errors();
             
-            // Ambil title dari SVG
             $titleNode = $dom->getElementsByTagName('title')->item(0);
             $svgTitle = $titleNode ? $titleNode->nodeValue : '(no title)';
             
-            // Ambil konten SVG
             $svgContent = file_get_contents($path);
         }
     } else {
@@ -76,7 +56,6 @@ if (isset($_GET['view'])) {
     }
 }
 
-// ── List uploaded files ──
 $files = array_diff(scandir($uploadDir), ['.', '..']);
 $svgFiles = array_filter($files, fn($f) => str_ends_with(strtolower($f), '.svg'));
 ?>
@@ -164,7 +143,6 @@ $svgFiles = array_filter($files, fn($f) => str_ends_with(strtolower($f), '.svg')
             <div class="error"><?= htmlspecialchars($error) ?></div>
         <?php endif; ?>
 
-        <!-- Upload Section -->
         <div class="upload-section">
             <h2>Upload SVG</h2>
             <form method="POST" enctype="multipart/form-data">
@@ -173,7 +151,6 @@ $svgFiles = array_filter($files, fn($f) => str_ends_with(strtolower($f), '.svg')
             </form>
         </div>
 
-        <!-- SVG Viewer -->
         <?php if ($svgContent): ?>
         <div class="viewer">
             <h2>SVG Preview</h2>
@@ -189,7 +166,6 @@ $svgFiles = array_filter($files, fn($f) => str_ends_with(strtolower($f), '.svg')
             <div class="error"><?= htmlspecialchars($viewError) ?></div>
         <?php endif; ?>
 
-        <!-- File List -->
         <?php if (!empty($svgFiles)): ?>
         <div class="file-list">
             <h2>Uploaded Files</h2>

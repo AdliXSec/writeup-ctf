@@ -2,22 +2,8 @@
 # Game Server Engine for CTF (NTP-Synced Ticks)
 cd /challenge
 
-while true; do
-  # Menghitung detik hingga batas 300 detik (5 menit) berikutnya
-  NOW=$(date +%s)
-  REMAINING=$(( 300 - (NOW % 300) ))
-  
-  echo "[$(date)] Menunggu $REMAINING detik untuk sinkronisasi Tick berikutnya (NTP Sync)..."
-  sleep $REMAINING
-
-  echo "[$(date)] WAKTU TICK TIBA! Mengeksekusi rotasi flag dan Factory Reset..."
-
-  TICK=1
-  if grep -q "CTF_TICK=" .env 2>/dev/null; then
-    TICK=$(grep "CTF_TICK=" .env | cut -d'=' -f2)
-    TICK=$((TICK+1))
-  fi
-
+generate_flags() {
+  TICK=$1
   RND1=$(cat /dev/urandom | tr -dc 'a-z0-9' | fold -w 12 | head -n 1)
   RND2=$(cat /dev/urandom | tr -dc 'a-z0-9' | fold -w 12 | head -n 1)
   RND3=$(cat /dev/urandom | tr -dc 'a-z0-9' | fold -w 12 | head -n 1)
@@ -40,6 +26,31 @@ FLAG_PAPERMAKER=LEEXY{papermaker_yaml_deserialization_rce_${RND7}}
 FLAG_ARCHIVEDESK=LEEXY{archivedesk_weak_crypto_idor_${RND8}}
 FLAG_BETORGANIZER=LEEXY{betorganizer_toctou_ssti_${RND9}}
 EOF
+}
+
+if ! grep -q "CTF_TICK=" .env 2>/dev/null; then
+  echo "[$(date)] Inisialisasi Tick #1 awal..."
+  generate_flags 1
+  docker compose up --force-recreate -d fetcher nslookup gag-wiki svg-viewer passforge papermaker archivedesk betorganizer
+fi
+
+while true; do
+  # Menghitung detik hingga batas 300 detik (5 menit) berikutnya
+  NOW=$(date +%s)
+  REMAINING=$(( 300 - (NOW % 300) ))
+  
+  echo "[$(date)] Menunggu $REMAINING detik untuk sinkronisasi Tick berikutnya (NTP Sync)..."
+  sleep $REMAINING
+
+  echo "[$(date)] WAKTU TICK TIBA! Mengeksekusi rotasi flag dan Factory Reset..."
+
+  TICK=1
+  if grep -q "CTF_TICK=" .env 2>/dev/null; then
+    TICK=$(grep "CTF_TICK=" .env | cut -d'=' -f2)
+    TICK=$((TICK+1))
+  fi
+
+  generate_flags ${TICK}
 
   # Factory Reset: Menghapus perubahan attacker dan memasukkan flag baru
   docker compose up --force-recreate -d fetcher nslookup gag-wiki svg-viewer passforge papermaker archivedesk betorganizer

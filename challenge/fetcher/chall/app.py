@@ -1,10 +1,4 @@
 #!/usr/bin/env python3
-"""
-Fetcher - SSRF Challenge
-Kerentanan: Server-Side Request Forgery dengan bypass filter.
-Filter memblokir 'localhost' dan '127.0.0.1' tapi bisa dibypass
-dengan representasi IP lain seperti 0x7f000001, 017700000001, dll.
-"""
 import os
 import re
 import urllib.request
@@ -76,7 +70,6 @@ def index():
 
 @app.route("/flag")
 def flag_endpoint():
-    """Endpoint internal - hanya bisa diakses dari localhost"""
     remote = request.remote_addr
     if remote in ("127.0.0.1", "::1"):
         return FLAG
@@ -89,10 +82,6 @@ def fetch():
     if not url:
         return render_template_string(INDEX_HTML, error="Please provide a URL.")
 
-    # --- VULNERABLE FILTER ---
-    # Hanya cek string literal 'localhost' dan '127.0.0.1'
-    # Tidak menghandle representasi IP lain: 0x7f000001, 2130706433,
-    # 017700000001, 0177.0.0.1, [::1], dll.
     try:
         from urllib.parse import urlparse
         parsed = urlparse(url)

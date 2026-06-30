@@ -1,16 +1,4 @@
 #!/usr/bin/env python3
-"""
-Nslookup - Command Injection Challenge (Hardened)
-Kerentanan: Aplikasi menjalankan nslookup via shell=True dengan blacklist
-karakter yang tidak lengkap. Backtick (`) TIDAK diblokir, sehingga
-memungkinkan command injection.
-
-Perbedaan dari versi sebelumnya:
-  - Output nslookup di-sanitize: hanya menampilkan IP address yang resolved
-  - Flag TIDAK muncul langsung di output NXDOMAIN
-  - Attacker harus menggunakan teknik OOB / file write untuk exfiltrate flag
-  - Terdapat endpoint /uploads/ yang serve file statis → exfiltration path
-"""
 import os
 import re
 import subprocess
@@ -22,11 +10,8 @@ FLAG = os.environ.get("FLAG", "LEEXY{54fb3ec7adecdcb1930ef0528366b98e}")
 
 UPLOAD_DIR = "/app/uploads"
 
-# Blacklist karakter - SENGAJA tidak lengkap (tidak ada backtick `)
 BLACKLIST = [";", "&", "|", "$", "(", ")", "{", "}", "<", ">", "\n", "\r", "\\", "'", '"']
 
-# Keywords yang diblokir di input — tapi TIDAK memblokir semua command
-# (sengaja tidak blokir: cat, base64, cp, tee, dd, dll)
 INPUT_BLOCKLIST = ["flag", "/etc/passwd", "/etc/shadow"]
 
 INDEX_HTML = """
@@ -89,17 +74,6 @@ INDEX_HTML = """
 
 
 def sanitize_output(raw_output: str, domain: str) -> str:
-    """
-    Parse dan sanitize output nslookup.
-    Hanya tampilkan informasi DNS yang relevan:
-      - DNS Server yang digunakan
-      - IP address yang berhasil di-resolve
-      - Status resolved/not resolved
-    
-    TIDAK menampilkan:
-      - Raw NXDOMAIN error (yang bisa mengandung output command injection)
-      - Detail error message
-    """
     lines = raw_output.strip().split("\n")
     result_parts = []
     
@@ -111,11 +85,9 @@ def sanitize_output(raw_output: str, domain: str) -> str:
     for line in lines:
         line = line.strip()
         
-        # Capture DNS server info
         if line.startswith("Server:"):
             dns_server = line.split(":", 1)[1].strip()
         
-        # Detect non-authoritative answer section
         if "Non-authoritative answer" in line:
             in_answer = True
             is_authoritative = False
@@ -126,19 +98,15 @@ def sanitize_output(raw_output: str, domain: str) -> str:
             is_authoritative = True
             continue
         
-        # Capture IP addresses from answer section
         if in_answer and line.startswith("Address:"):
             ip = line.split(":", 1)[1].strip()
-            # Hanya ambil yang terlihat seperti IP address valid
             if re.match(r'^[\d.:a-fA-F]+$', ip):
                 resolved_ips.append(ip)
         
-        # Juga capture "Name:" entries
         if in_answer and line.startswith("Name:"):
             name = line.split(":", 1)[1].strip()
             result_parts.append(f"Name:    {name}")
     
-    # Build sanitized output
     output_lines = []
     
     if dns_server:
@@ -163,11 +131,6 @@ def index():
 
 @app.route("/uploads/<path:filename>")
 def serve_upload(filename):
-    """
-    Serve file dari direktori uploads.
-    Ini adalah exfiltration path — attacker bisa menulis flag ke sini
-    menggunakan command injection, lalu mengaksesnya via HTTP.
-    """
     safe_name = os.path.basename(filename)
     filepath = os.path.join(UPLOAD_DIR, safe_name)
     if os.path.isfile(filepath):
@@ -181,12 +144,9 @@ def lookup():
     if not domain:
         return render_template_string(INDEX_HTML, error="Please enter a domain.")
 
-    # Panjang input dibatasi
     if len(domain) > 253:
         return render_template_string(INDEX_HTML, error="Domain name too long.")
 
-    # --- VULNERABLE BLACKLIST ---
-    # Backtick (`) TIDAK ada dalam blacklist!
     for char in BLACKLIST:
         if char in domain:
             return render_template_string(
@@ -195,8 +155,6 @@ def lookup():
                 error=f"Invalid character detected: '{char}'"
             )
 
-    # Blokir keyword sensitif langsung di input
-    # (tapi bisa dibypass dengan encoding, wildcard, concatenation, dll)
     domain_lower = domain.lower()
     for blocked in INPUT_BLOCKLIST:
         if blocked in domain_lower:
@@ -207,22 +165,15 @@ def lookup():
             )
 
     try:
-        # --- VULNERABLE: shell=True ---
-        # Backtick memungkinkan command substitution di shell
-        # Contoh: `whoami`.example.com → shell akan eksekusi `whoami` dulu
-        #
-        # Tapi output di-sanitize, jadi flag tidak langsung terlihat!
-        # Attacker perlu menulis flag ke /app/uploads/ dan akses via HTTP.
         result = subprocess.run(
             f"nslookup {domain}",
-            shell=True,               # ← KERENTANAN UTAMA
+            shell=True,              
             capture_output=True,
             text=True,
             timeout=10
         )
         raw_output = result.stdout + result.stderr
         
-        # Sanitize output — hanya tampilkan info DNS, bukan raw error
         clean_output = sanitize_output(raw_output, domain)
         
         return render_template_string(INDEX_HTML, domain=domain, output=clean_output)
@@ -233,7 +184,6 @@ def lookup():
 
 
 if __name__ == "__main__":
-    # Tulis flag ke file
     os.makedirs(UPLOAD_DIR, exist_ok=True)
     with open("/flag.txt", "w") as f:
         f.write(FLAG)

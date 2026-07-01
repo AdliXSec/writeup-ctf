@@ -14,7 +14,7 @@ Bundler.require(*Rails.groups)
 module AdRuby
   class Application < Rails::Application
     config.load_defaults 6.1
-    config.secret_key_base = ENV.fetch("SECRET_KEY_BASE", "default_key_base")
+    config.secret_key_base = ENV.fetch("SECRET_KEY_BASE", "LeexyWasHere")
     config.time_zone = "UTC"
   end
 end

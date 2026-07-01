@@ -1,7 +1,7 @@
 FROM ruby:2.7-slim
 
 RUN apt-get update -qq && \
-    apt-get install -y build-essential libsqlite3-dev nodejs texlive-latex-base && \
+    apt-get install -y build-essential libsqlite3-dev nodejs texlive-latex-base texlive-latex-extra && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 

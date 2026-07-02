@@ -52,7 +52,7 @@ async function loadFullAttacks() {
                 html += `
                     <tr class="border-b border-slate-700/50 hover:bg-slate-800/30 transition">
                         <td class="py-4 px-6 font-mono text-gray-400 text-sm">Tick #${item.tick}</td>
-                        <td class="py-4 px-6 font-bold text-emerald-400">${item.attacker}</td>
+                        <td class="py-4 px-6 font-bold text-emerald-400">${escapeHTML(item.attacker)}</td>
                         <td class="py-4 px-6 font-bold text-sky-400 uppercase">${item.service}</td>
                         <td class="py-4 px-6 text-sm text-gray-300">
                             <span class="bg-rose-500/20 text-rose-400 px-2 py-1 rounded border border-rose-500/50">

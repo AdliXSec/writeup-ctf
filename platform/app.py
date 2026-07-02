@@ -7,10 +7,26 @@ from flask import Flask, render_template, request, redirect, url_for, session, f
 from werkzeug.security import generate_password_hash, check_password_hash
 
 app = Flask(__name__)
-app.secret_key = 'super_secret_ctf_key'
-JWT_SECRET = 'super_secret_jwt_key_playit'
 DB_PATH = '/app/data/scoreboard.db'
 ENV_PATH = '/app/.env'
+
+def get_or_create_secret():
+    secret_path = '/app/data/secret.key'
+    try:
+        os.makedirs('/app/data', exist_ok=True)
+        if not os.path.exists(secret_path):
+            # Create secret file exclusively to avoid race condition
+            fd = os.open(secret_path, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
+            os.write(fd, os.urandom(32).hex().encode())
+            os.close(fd)
+    except FileExistsError:
+        pass # File created by another worker
+    with open(secret_path, 'r') as f:
+        return f.read().strip()
+
+_persistent_secret = get_or_create_secret()
+app.secret_key = os.environ.get('FLASK_SECRET', _persistent_secret)
+JWT_SECRET = os.environ.get('JWT_SECRET', _persistent_secret)
 
 def get_db():
     if 'db' not in g:
@@ -88,7 +104,7 @@ def jwt_required(f):
         return f(*args, **kwargs)
     return decorated
 
-# --- API ENDPOINTS (PLAY IT 2026 SPEC) ---
+# --- API ENDPOINTS (0XL33XY 2026 SPEC) ---
 
 @app.route('/api/v2/authenticate', methods=['POST'])
 def api_authenticate():

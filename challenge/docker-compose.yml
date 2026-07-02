@@ -77,6 +77,24 @@ services:
       - FLAG=${FLAG_BETORGANIZER}
     command: /bin/sh -c "echo $$FLAG > /flag.txt && ./betorganizer"
 
+  action-packed:
+    build: ./action-packed/chall
+    container_name: ctf-action-packed
+    ports:
+      - "8160:8160"
+    restart: unless-stopped
+    environment:
+      - FLAG=${FLAG_ACTION_PACKED}
+
+  silent-oracle:
+    build: ./silent-oracle/chall
+    container_name: ctf-silent-oracle
+    ports:
+      - "8170:8170"
+    restart: unless-stopped
+    environment:
+      - FLAG=${FLAG_SILENT_ORACLE}
+
   resetter:
     image: docker:cli
     container_name: ctf-resetter

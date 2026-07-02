@@ -13,6 +13,8 @@ generate_flags() {
   RND7=$(cat /dev/urandom | tr -dc 'a-z0-9' | fold -w 12 | head -n 1)
   RND8=$(cat /dev/urandom | tr -dc 'a-z0-9' | fold -w 12 | head -n 1)
   RND9=$(cat /dev/urandom | tr -dc 'a-z0-9' | fold -w 12 | head -n 1)
+  RND10=$(cat /dev/urandom | tr -dc 'a-z0-9' | fold -w 12 | head -n 1)
+  RND11=$(cat /dev/urandom | tr -dc 'a-z0-9' | fold -w 12 | head -n 1)
 
   cat > .env <<EOF
 CTF_TICK=${TICK}
@@ -25,13 +27,15 @@ PROOF_PASSFORGE=PROOF{passforge_unlock_${RND6}}
 FLAG_PAPERMAKER=LEEXY{papermaker_yaml_deserialization_rce_${RND7}}
 FLAG_ARCHIVEDESK=LEEXY{archivedesk_weak_crypto_idor_${RND8}}
 FLAG_BETORGANIZER=LEEXY{betorganizer_toctou_ssti_${RND9}}
+FLAG_ACTION_PACKED=LEEXY{action_packed_broken_access_control_${RND10}}
+FLAG_SILENT_ORACLE=LEEXY{silent_oracle_graphql_sqli_${RND11}}
 EOF
 }
 
 if ! grep -q "CTF_TICK=" .env 2>/dev/null; then
   echo "[$(date)] Inisialisasi Tick #1 awal..."
   generate_flags 1
-  docker compose up --force-recreate -d fetcher nslookup gag-wiki svg-viewer passforge papermaker archivedesk betorganizer
+  docker compose up --force-recreate -d fetcher nslookup gag-wiki svg-viewer passforge papermaker archivedesk betorganizer action-packed silent-oracle
 fi
 
 while true; do
@@ -53,7 +57,7 @@ while true; do
   generate_flags ${TICK}
 
   # Factory Reset: Menghapus perubahan attacker dan memasukkan flag baru
-  docker compose up --force-recreate -d fetcher nslookup gag-wiki svg-viewer passforge papermaker archivedesk betorganizer
+  docker compose up --force-recreate -d fetcher nslookup gag-wiki svg-viewer passforge papermaker archivedesk betorganizer action-packed silent-oracle
   
   echo "[$(date)] Factory Reset selesai untuk Tick #${TICK}."
 done

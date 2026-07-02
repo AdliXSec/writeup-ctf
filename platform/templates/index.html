@@ -65,7 +65,7 @@ async function loadScoreboard() {
                 html += `
                     <tr class="border-b border-slate-700/50 hover:bg-slate-800/30 transition">
                         <td class="py-4 px-6 font-bold ${rankColor}">#${row.rank}</td>
-                        <td class="py-4 px-6 text-lg">${row.team}</td>
+                        <td class="py-4 px-6 text-lg">${escapeHTML(row.team)}</td>
                         <td class="py-4 px-6 font-bold text-sky-400">${row.total} pts</td>
                     </tr>
                 `;
@@ -102,7 +102,7 @@ async function loadAttacks() {
             data.items.forEach(item => {
                 html += `
                     <div class="bg-slate-800/50 p-3 rounded border border-slate-700 text-sm">
-                        <span class="text-emerald-400 font-bold">${item.attacker}</span> solved 
+                        <span class="text-emerald-400 font-bold">${escapeHTML(item.attacker)}</span> solved 
                         <span class="text-sky-300">${item.service.toUpperCase()}</span>
                     </div>
                 `;

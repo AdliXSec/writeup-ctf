@@ -28,27 +28,27 @@ async function loadProfile() {
             const html = `
                 <div class="grid grid-cols-3 gap-4 border-b border-slate-700/50 pb-4">
                     <div class="text-gray-400 font-semibold">Player ID</div>
-                    <div class="col-span-2 text-white">${data.player_id}</div>
+                    <div class="col-span-2 text-white">${escapeHTML(data.player_id)}</div>
                 </div>
                 <div class="grid grid-cols-3 gap-4 border-b border-slate-700/50 pb-4">
                     <div class="text-gray-400 font-semibold">Team ID</div>
-                    <div class="col-span-2 text-white">${data.team_id}</div>
+                    <div class="col-span-2 text-white">${escapeHTML(data.team_id)}</div>
                 </div>
                 <div class="grid grid-cols-3 gap-4 border-b border-slate-700/50 pb-4">
                     <div class="text-gray-400 font-semibold">Team Name</div>
-                    <div class="col-span-2 font-bold text-sky-400">${data.team_name}</div>
+                    <div class="col-span-2 font-bold text-sky-400">${escapeHTML(data.team_name)}</div>
                 </div>
                 <div class="grid grid-cols-3 gap-4 border-b border-slate-700/50 pb-4">
                     <div class="text-gray-400 font-semibold">Display Name</div>
-                    <div class="col-span-2 text-white">${data.display_name}</div>
+                    <div class="col-span-2 text-white">${escapeHTML(data.display_name)}</div>
                 </div>
                 <div class="grid grid-cols-3 gap-4 border-b border-slate-700/50 pb-4">
                     <div class="text-gray-400 font-semibold">Email</div>
-                    <div class="col-span-2 text-white">${data.email}</div>
+                    <div class="col-span-2 text-white">${escapeHTML(data.email)}</div>
                 </div>
                 <div class="grid grid-cols-3 gap-4 border-b border-slate-700/50 pb-4">
                     <div class="text-gray-400 font-semibold">Role</div>
-                    <div class="col-span-2 text-white capitalize bg-emerald-500/20 text-emerald-400 px-3 py-1 rounded w-fit">${data.role}</div>
+                    <div class="col-span-2 text-white capitalize bg-emerald-500/20 text-emerald-400 px-3 py-1 rounded w-fit">${escapeHTML(data.role)}</div>
                 </div>
             `;
             document.getElementById('profile-content').innerHTML = html;

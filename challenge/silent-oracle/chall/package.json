@@ -1,0 +1,16 @@
+{
+  "name": "silent-oracle-ctf",
+  "version": "1.0.0",
+  "description": "0xV01D CTF - Silent Oracle",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "express-graphql": "^0.12.0",
+    "express-session": "^1.18.0",
+    "graphql": "^15.8.0",
+    "sqlite3": "^5.1.7"
+  }
+}

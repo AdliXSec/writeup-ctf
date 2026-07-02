@@ -50,6 +50,13 @@
     <script>
         const token = localStorage.getItem('token');
         
+        function escapeHTML(str) {
+            if (!str) return "";
+            return String(str).replace(/[&<>'"]/g, tag => ({
+                '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'
+            }[tag] || tag));
+        }
+        
         function showFlash(message, type='error') {
             const container = document.getElementById('flash-container');
             const div = document.createElement('div');
@@ -86,7 +93,7 @@
                             <span class="text-gray-400 mx-1">|</span>
                             <a href="/submit" class="hover:text-sky-400 transition font-semibold text-emerald-400">Submit Flag</a>
                             <span class="text-gray-400 mx-1">|</span>
-                            <a href="/profile" class="text-sm hover:text-sky-400 transition">Hi, <b>${data.display_name}</b></a>
+                            <a href="/profile" class="text-sm hover:text-sky-400 transition">Hi, <b>${escapeHTML(data.display_name)}</b></a>
                             <a href="javascript:void(0)" onclick="doLogout()" class="text-rose-400 hover:text-rose-300 transition text-sm ml-2">Logout</a>
                         `;
                     } else {

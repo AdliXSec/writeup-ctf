@@ -1,6 +1,6 @@
 #!/bin/bash
 echo -e "\033[0;36m=============================================\033[0m"
-echo -e "\033[0;36m    Starting Play IT 2026 CTF Platform       \033[0m"
+echo -e "\033[0;36m    Starting 0xL33XY 2026 CTF Platform       \033[0m"
 echo -e "\033[0;36m=============================================\033[0m"
 echo ""
 

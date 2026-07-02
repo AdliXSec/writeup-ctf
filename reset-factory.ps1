@@ -1,5 +1,5 @@
 Write-Host "=============================================" -ForegroundColor Red
-Write-Host "    FACTORY RESET: Play IT 2026 CTF          " -ForegroundColor Red
+Write-Host "    FACTORY RESET: 0xL33XY 2026 CTF          " -ForegroundColor Red
 Write-Host "=============================================" -ForegroundColor Red
 Write-Host "WARNING: This will DESTROY all databases, users, scores, and game states." -ForegroundColor Yellow
 Write-Host "Press Ctrl+C to cancel, or wait 5 seconds to proceed..." -ForegroundColor Yellow

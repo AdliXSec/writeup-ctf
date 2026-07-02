@@ -1,5 +1,5 @@
 Write-Host "=============================================" -ForegroundColor Cyan
-Write-Host "    Starting Play IT 2026 CTF Platform       " -ForegroundColor Cyan
+Write-Host "    Starting 0xL33XY 2026 CTF Platform       " -ForegroundColor Cyan
 Write-Host "=============================================" -ForegroundColor Cyan
 Write-Host ""
 

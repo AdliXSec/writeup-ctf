@@ -192,7 +192,7 @@ def api_game_status():
         },
         "scheduler": {
             "state": "running",
-            "interval_seconds": 300,
+            "interval_seconds": 1200,
             "last_tick_id": current_tick,
             "last_reset_time": last_reset
         },

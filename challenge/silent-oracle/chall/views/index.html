@@ -1,53 +1,155 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Employee Directory</title>
     <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: #f9fafb; color: #111827; margin: 0; padding: 2rem; }
-        .container { background: white; padding: 2rem; border-radius: 8px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); max-width: 800px; margin: 0 auto; }
-        .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e5e7eb; padding-bottom: 1rem; margin-bottom: 1.5rem; }
-        h1 { margin: 0; font-size: 1.5rem; color: #1f2937; }
-        .logout-btn { color: #ef4444; text-decoration: none; font-size: 0.875rem; font-weight: 500; }
-        .logout-btn:hover { text-decoration: underline; }
-        .search-box { display: flex; gap: 0.5rem; margin-bottom: 2rem; }
-        input[type="text"] { flex: 1; padding: 0.75rem; border: 1px solid #d1d5db; border-radius: 4px; font-size: 1rem; }
-        button { background-color: #4f46e5; color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 4px; cursor: pointer; font-weight: 600; font-size: 1rem; }
-        button:hover { background-color: #4338ca; }
-        .employee-card { background: #f3f4f6; border: 1px solid #e5e7eb; border-radius: 6px; padding: 1rem; margin-bottom: 1rem; }
-        .employee-card h3 { margin: 0 0 0.25rem 0; color: #111827; }
-        .employee-card p { margin: 0; color: #4b5563; font-size: 0.9rem; }
-        .role-badge { display: inline-block; background: #e0e7ff; color: #4338ca; padding: 0.1rem 0.5rem; border-radius: 999px; font-size: 0.75rem; font-weight: 600; margin-top: 0.5rem; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #f9fafb;
+            color: #111827;
+            margin: 0;
+            padding: 2rem;
+        }
+
+        .container {
+            background: white;
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #e5e7eb;
+            padding-bottom: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 1.5rem;
+            color: #1f2937;
+        }
+
+        .logout-btn {
+            color: #ef4444;
+            text-decoration: none;
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+
+        .logout-btn:hover {
+            text-decoration: underline;
+        }
+
+        .search-box {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 2rem;
+        }
+
+        input[type="text"] {
+            flex: 1;
+            padding: 0.75rem;
+            border: 1px solid #d1d5db;
+            border-radius: 4px;
+            font-size: 1rem;
+        }
+
+        button {
+            background-color: #4f46e5;
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 1rem;
+        }
+
+        button:hover {
+            background-color: #4338ca;
+        }
+
+        .employee-card {
+            background: #f3f4f6;
+            border: 1px solid #e5e7eb;
+            border-radius: 6px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .employee-card h3 {
+            margin: 0 0 0.25rem 0;
+            color: #111827;
+        }
+
+        .employee-card p {
+            margin: 0;
+            color: #4b5563;
+            font-size: 0.9rem;
+        }
+
+        .role-badge {
+            display: inline-block;
+            background: #e0e7ff;
+            color: #4338ca;
+            padding: 0.1rem 0.5rem;
+            border-radius: 999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            margin-top: 0.5rem;
+        }
     </style>
 </head>
+
 <body>
 
-<div class="container">
-    <div class="header">
-        <h1>CorpDirectory Search</h1>
-        <a href="/logout" class="logout-btn">Logout</a>
-    </div>
-    
-    <div class="search-box">
-        <input type="text" id="searchInput" placeholder="Search employees by name (e.g., a)..." value="a">
-        <button id="searchBtn">Search</button>
-    </div>
-    
-    <div id="results">
-        <!-- Results will be injected here -->
-    </div>
-</div>
+    <div class="container">
+        <div class="header">
+            <h1>CorpDirectory Search</h1>
+            <a href="#" onclick="logout()" class="logout-btn">Logout</a>
+        </div>
 
-<script>
-    async function performSearch() {
-        const searchVal = document.getElementById('searchInput').value;
-        const resultsDiv = document.getElementById('results');
-        resultsDiv.innerHTML = '<p>Loading...</p>';
-        
-        // This is what the attacker needs to find! 
-        // We are sending a GraphQL query behind the scenes.
-        const graphqlQuery = `
+        <div class="search-box">
+            <input type="text" id="searchInput" placeholder="Search employees by name (e.g., a)..." value="a">
+            <button id="searchBtn">Search</button>
+        </div>
+
+        <div id="results">
+        </div>
+    </div>
+
+    <script>
+        const token = localStorage.getItem('token');
+        if (!token) {
+            window.location = '/login';
+        }
+
+        function logout() {
+            localStorage.removeItem('token');
+            window.location = '/login';
+        }
+
+        async function performSearch() {
+            const searchVal = document.getElementById('searchInput').value;
+
+            if (!/^[a-zA-Z0-9\s]*$/.test(searchVal)) {
+                alert('Validation Error: Only letters and numbers are allowed for employee search.');
+                return;
+            }
+
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = '<p>Loading...</p>';
+
+            const graphqlQuery = `
             query {
               users(search: "${searchVal.replace(/"/g, '\\"')}") {
                 id
@@ -58,49 +160,57 @@
               }
             }
         `;
-        
-        try {
-            const res = await fetch('/graphql', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ query: graphqlQuery })
-            });
-            
-            const json = await res.json();
-            
-            if (json.errors) {
-                resultsDiv.innerHTML = `<p style="color: red;">Error: ${json.errors[0].message}</p>`;
-                return;
-            }
-            
-            const users = json.data.users;
-            
-            if (!users || users.length === 0) {
-                resultsDiv.innerHTML = '<p>No employees found.</p>';
-                return;
-            }
-            
-            resultsDiv.innerHTML = users.map(u => `
+
+            try {
+                const res = await fetch('/graphql', {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + token
+                    },
+                    body: JSON.stringify({ query: graphqlQuery })
+                });
+
+                const json = await res.json();
+
+                if (json.errors) {
+                    if (json.errors[0].message.includes('Unauthorized')) {
+                        localStorage.removeItem('token');
+                        window.location = '/login';
+                        return;
+                    }
+                    resultsDiv.innerHTML = `<p style="color: red;">Error: ${json.errors[0].message}</p>`;
+                    return;
+                }
+
+                const users = json.data.users;
+
+                if (!users || users.length === 0) {
+                    resultsDiv.innerHTML = '<p>No employees found.</p>';
+                    return;
+                }
+
+                resultsDiv.innerHTML = users.map(u => `
                 <div class="employee-card">
                     <h3>${u.displayName || 'Unknown'} (@${u.username || 'unknown'})</h3>
                     <p>${u.bio || 'No bio available.'}</p>
                     <span class="role-badge">${u.role || 'employee'}</span>
                 </div>
             `).join('');
-            
-        } catch (err) {
-            resultsDiv.innerHTML = `<p style="color: red;">Network Error: ${err.message}</p>`;
+
+            } catch (err) {
+                resultsDiv.innerHTML = `<p style="color: red;">Network Error: ${err.message}</p>`;
+            }
         }
-    }
 
-    document.getElementById('searchBtn').addEventListener('click', performSearch);
-    document.getElementById('searchInput').addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') performSearch();
-    });
+        document.getElementById('searchBtn').addEventListener('click', performSearch);
+        document.getElementById('searchInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') performSearch();
+        });
 
-    // Perform initial search
-    performSearch();
-</script>
+        performSearch();
+    </script>
 
 </body>
+
 </html>

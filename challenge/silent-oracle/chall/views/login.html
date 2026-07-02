@@ -31,6 +31,11 @@
     </div>
 
     <script>
+        // Redirect if already logged in
+        if (localStorage.getItem('token')) {
+            window.location = '/';
+        }
+
         document.getElementById('loginForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const u = document.getElementById('username').value;
@@ -50,7 +55,8 @@
                 });
                 const json = await res.json();
                 
-                if (json.data && json.data.login === "Success") {
+                if (json.data && json.data.login && json.data.login !== "Invalid credentials" && json.data.login !== "Missing fields") {
+                    localStorage.setItem('token', json.data.login);
                     window.location = '/';
                 } else {
                     alert(json.data.login || "Error logging in");

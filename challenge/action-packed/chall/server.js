@@ -9,14 +9,12 @@ const upload = multer();
 const PORT = process.env.PORT || 8160;
 const FLAG = process.env.FLAG || "LEEXY{c693172d-af96-4766-9dc8-0f54de51cbf3}";
 
-// In-memory Database
 const users = [];
 
-// Seed admin user
 users.push({
     id: 1,
     username: 'admin',
-    password: crypto.randomBytes(16).toString('hex'), // Un-guessable
+    password: crypto.randomBytes(16).toString('hex'),
     role: 'admin'
 });
 
@@ -28,7 +26,6 @@ app.use(session({
     saveUninitialized: false
 }));
 
-// Helper middleware
 const requireAuth = (req, res, next) => {
     if (!req.session.userId) {
         return res.redirect('/login');
@@ -36,9 +33,6 @@ const requireAuth = (req, res, next) => {
     next();
 };
 
-// ========================
-// Authentication Routes
-// ========================
 app.get('/login', (req, res) => {
     if (req.session.userId) return res.redirect('/');
     res.sendFile(path.join(__dirname, 'views', 'login.html'));
@@ -72,7 +66,7 @@ app.post('/register', (req, res) => {
         id: users.length + 1,
         username,
         password,
-        role: 'user' // Default role
+        role: 'user'
     });
     res.redirect('/login');
 });
@@ -82,10 +76,6 @@ app.get('/logout', (req, res) => {
     res.redirect('/login');
 });
 
-
-// ========================
-// Application Routes
-// ========================
 app.get('/', requireAuth, (req, res) => {
     res.sendFile(path.join(__dirname, 'views', 'index.html'));
 });
@@ -94,13 +84,10 @@ app.get('/api/me', requireAuth, (req, res) => {
     res.json({ role: req.session.role });
 });
 
-// Middleware to mock Next.js Server Actions
 app.post('/', requireAuth, upload.none(), (req, res) => {
-    // Enforce Origin check
     const origin = req.headers.origin;
     const host = req.headers.host;
 
-    // In a real Next.js app, if Origin doesn't match Host it throws 500
     if (origin && host) {
         try {
             const originUrl = new URL(origin);
@@ -118,14 +105,10 @@ app.post('/', requireAuth, upload.none(), (req, res) => {
     res.type('text/x-component');
 
     if (nextAction === 'cd2b4b472561774fc0bd652dc4da5719a893167d') {
-        // Action: Update Details
         const responseText = `0:["$@1",["BXWGN_shhgAoAo8Z4rloN",null]]\n1:{"success":true,"message":"Profile updated successfully."}`;
         return res.send(responseText);
     }
     else if (nextAction === '33924c174e655435ab82a6bdaee5448329835b12') {
-        // Action: Generate Master Token
-        // VULNERABILITY: Broken Access Control. 
-        // We only check if they are logged in (requireAuth), but NOT if req.session.role === 'admin'
         const responseText = `0:["$@1",["BXWGN_shhgAoAo8Z4rloN",null]]\n1:{"token":"${FLAG}"}`;
         return res.send(responseText);
     }

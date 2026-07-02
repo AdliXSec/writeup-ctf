@@ -2,7 +2,7 @@
 
 Welcome to the 0xL33XY 2026 CTF Platform! This repository contains a collection of web exploitation, cryptography, and reverse engineering challenges designed for cybersecurity training and competitions. 
 
-The platform features an automated Game Server engine (`game_server.sh`) that provides NTP-synced tick-based flag rotation and factory resets every 5 minutes, simulating a highly dynamic Attack & Defense or Jeopardy environment.
+The platform features an automated Game Server engine (`game_server.sh`) that provides NTP-synced tick-based flag rotation and factory resets every 20 minutes, simulating a highly dynamic Attack & Defense or Jeopardy environment.
 
 ## ⚠️ Disclaimer & Watermark
 
@@ -19,7 +19,7 @@ The platform features an automated Game Server engine (`game_server.sh`) that pr
 
 ## Features
 
-- **Automated Factory Reset**: Containers are destroyed and recreated every 5 minutes to ensure a pristine environment for all players and to wipe attacker backdoors.
+- **Automated Factory Reset**: Containers are destroyed and recreated every 20 minutes to ensure a pristine environment for all players and to wipe attacker backdoors.
 - **Dynamic Flags**: Flags are dynamically generated and injected into the containers upon every tick rotation.
 - **Realistic Exploitation Scenarios**: Challenges emulate real-world corporate applications, complete with internal logic, realistic UI/UX, and authentication portals.
 

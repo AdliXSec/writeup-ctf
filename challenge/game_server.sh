@@ -39,9 +39,9 @@ if ! grep -q "CTF_TICK=" .env 2>/dev/null; then
 fi
 
 while true; do
-  # Menghitung detik hingga batas 300 detik (5 menit) berikutnya
+  # Menghitung detik hingga batas 1200 detik (20 menit) berikutnya
   NOW=$(date +%s)
-  REMAINING=$(( 300 - (NOW % 300) ))
+  REMAINING=$(( 1200 - (NOW % 1200) ))
   
   echo "[$(date)] Menunggu $REMAINING detik untuk sinkronisasi Tick berikutnya (NTP Sync)..."
   sleep $REMAINING

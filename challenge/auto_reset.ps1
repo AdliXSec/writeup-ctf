@@ -1,5 +1,5 @@
 Set-Location $PSScriptRoot
-Write-Host "Memulai auto-reset CTF setiap 5 menit..."
+Write-Host "Memulai auto-reset CTF setiap 20 menit..."
 while ($true) {
     Write-Host "[$(Get-Date)] Me-reset container agar kembali ke state awal..."
     
@@ -18,6 +18,6 @@ FLAG_BETORGANIZER=LEEXY{betorganizer_toctou_ssti_$rnd}
     Set-Content -Path ".env" -Value $envContent
     
     docker compose up --force-recreate -d
-    Write-Host "[$(Get-Date)] Reset selesai! Menunggu 5 menit..."
-    Start-Sleep -Seconds 300
+    Write-Host "[$(Get-Date)] Reset selesai! Menunggu 20 menit..."
+    Start-Sleep -Seconds 1200
 }

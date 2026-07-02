@@ -107,7 +107,7 @@ function startCountdown() {
     
     countdownInterval = setInterval(() => {
         const now = Math.floor(Date.now() / 1000);
-        let diff = 300 - (now % 300);
+        let diff = 1200 - (now % 1200);
         
         
         const m = Math.floor(diff / 60).toString().padStart(2, '0');

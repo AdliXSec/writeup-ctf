@@ -31,6 +31,9 @@
     </div>
 
     <script>
+        if (localStorage.getItem('token')) {
+            window.location = '/';
+        }
         document.getElementById('registerForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const u = document.getElementById('username').value;

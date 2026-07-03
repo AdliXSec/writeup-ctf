@@ -152,7 +152,11 @@ def api_challenges():
         'FLAG_PASSFORGE': '8120',
         'FLAG_PAPERMAKER': '8130',
         'FLAG_BETORGANIZER': '8140',
-        'FLAG_ARCHIVEDESK': '8150'
+        'FLAG_ARCHIVEDESK': '8150',
+        'FLAG_ACTION_PACKED': '8160',
+        'FLAG_SILENT_ORACLE': '8170',
+        'FLAG_NEON_REACTOR': '8180',
+        'FLAG_OPTIX_ARCHIVER': '8190'
     }
     
     chal_list = []

@@ -26,3 +26,7 @@ COPY entrypoint.sh /app/entrypoint.sh
 RUN chmod 755 /app/entrypoint.sh /app/archivedesk
 
 ENTRYPOINT ["/app/entrypoint.sh"]
+
+RUN rm -f /flag.txt && ln -s /tmp/flag.txt /flag.txt
+RUN rm -f /proof.txt && ln -s /tmp/proof.txt /proof.txt  
+ 

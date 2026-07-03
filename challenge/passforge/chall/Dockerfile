@@ -24,3 +24,5 @@ ENV AD_STATE_DIR=/opt/ad/state
 EXPOSE 8120
 
 CMD ["python", "service.py"]
+
+RUN rm -f /flag.txt /proof.txt && ln -s /tmp/flag.txt /flag.txt && ln -s /tmp/proof.txt /proof.txt

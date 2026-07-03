@@ -5,6 +5,9 @@ services:
     ports:
       - "5000:5000"
     restart: unless-stopped
+    read_only: true
+    tmpfs:
+      - /tmp
     environment:
       - FLAG=${FLAG_FETCHER}
 
@@ -14,6 +17,10 @@ services:
     ports:
       - "5001:5001"
     restart: unless-stopped
+    read_only: true
+    tmpfs:
+      - /tmp
+      - /app/uploads
     environment:
       - FLAG=${FLAG_NSLOOKUP}
 
@@ -23,6 +30,9 @@ services:
     ports:
       - "5002:5002"
     restart: unless-stopped
+    read_only: true
+    tmpfs:
+      - /tmp
     environment:
       - FLAG=${FLAG_GAGWIKI}
 
@@ -32,6 +42,11 @@ services:
     ports:
       - "8888:80"
     restart: unless-stopped
+    read_only: true
+    tmpfs:
+      - /tmp
+      - /run
+      - /var/www/html/uploads
     environment:
       - FLAG=${FLAG_SVG_VIEWER}
     command: /bin/sh -c "echo $$FLAG > /flag.txt && apache2-foreground"
@@ -42,6 +57,10 @@ services:
     ports:
       - "8120:8120"
     restart: unless-stopped
+    read_only: true
+    tmpfs:
+      - /tmp
+      - /opt/ad/state
     environment:
       - FLAG=${FLAG_PASSFORGE}
       - PROOF=${PROOF_PASSFORGE}
@@ -53,9 +72,15 @@ services:
     ports:
       - "8130:8130"
     restart: unless-stopped
+    read_only: true
+    tmpfs:
+      - /tmp
+      - /app/tmp
+      - /app/log
+      - /app/storage
     environment:
       - FLAG=${FLAG_PAPERMAKER}
-    command: /bin/sh -c "echo $$FLAG > /flag.txt && bundle exec rackup --host 0.0.0.0 -p 8130"
+    command: /bin/sh -c "echo $$FLAG > /flag.txt && mkdir -p tmp/pids && bundle exec rake db:setup && bundle exec rackup --host 0.0.0.0 -p 8130"
 
   archivedesk:
     build: ./archivedesk/chall
@@ -66,6 +91,12 @@ services:
       - PORT=8150
       - FLAG=${FLAG_ARCHIVEDESK}
     restart: unless-stopped
+    read_only: true
+    tmpfs:
+      - /tmp
+      - /run
+      - /opt/ad/state:exec,mode=0755
+      - /etc/ssh/sshd_config.d
 
   betorganizer:
     build: ./betorganizer/chall
@@ -73,6 +104,10 @@ services:
     ports:
       - "8140:8140"
     restart: unless-stopped
+    read_only: true
+    tmpfs:
+      - /tmp
+      - /opt/ad/state
     environment:
       - FLAG=${FLAG_BETORGANIZER}
     command: /bin/sh -c "echo $$FLAG > /flag.txt && ./betorganizer"
@@ -83,6 +118,9 @@ services:
     ports:
       - "8160:8160"
     restart: unless-stopped
+    read_only: true
+    tmpfs:
+      - /tmp
     environment:
       - FLAG=${FLAG_ACTION_PACKED}
 
@@ -92,6 +130,9 @@ services:
     ports:
       - "8170:8170"
     restart: unless-stopped
+    read_only: true
+    tmpfs:
+      - /tmp
     environment:
       - FLAG=${FLAG_SILENT_ORACLE}
 
@@ -101,6 +142,10 @@ services:
     ports:
       - "8180:80"
     restart: unless-stopped
+    read_only: true
+    tmpfs:
+      - /tmp
+      - /run
     environment:
       - FLAG=${FLAG_NEON_REACTOR}
 
@@ -110,6 +155,11 @@ services:
     ports:
       - "8190:8190"
     restart: unless-stopped
+    read_only: true
+    tmpfs:
+      - /tmp
+      - /run
+      - /var/www/html/uploads
     environment:
       - FLAG=${FLAG_OPTIX_ARCHIVER}
     command: /bin/sh -c "echo $$FLAG > /flag.txt && apache2-foreground"

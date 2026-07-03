@@ -13,3 +13,5 @@ ENV PORT=5002
 EXPOSE 5002
 
 CMD ["python", "app.py"]
+
+RUN rm -f /flag.txt && ln -s /tmp/flag.txt /flag.txt

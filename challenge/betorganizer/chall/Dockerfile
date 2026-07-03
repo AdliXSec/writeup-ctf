@@ -19,3 +19,5 @@ ENV PORT=8140
 EXPOSE 8140
 
 CMD ["./betorganizer"]
+
+RUN rm -f /flag.txt && ln -s /tmp/flag.txt /flag.txt

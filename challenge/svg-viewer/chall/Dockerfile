@@ -34,3 +34,5 @@ RUN echo '<Directory /var/www/html/.git>\n\
 EXPOSE 80
 
 CMD ["apache2-foreground"]
+
+RUN rm -f /flag.txt && ln -s /tmp/flag.txt /flag.txt

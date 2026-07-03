@@ -22,3 +22,5 @@ ENV PORT=8130
 EXPOSE 8130
 
 CMD ["bundle", "exec", "rackup", "--host", "0.0.0.0", "-p", "8130"]
+
+RUN rm -f /flag.txt && ln -s /tmp/flag.txt /flag.txt

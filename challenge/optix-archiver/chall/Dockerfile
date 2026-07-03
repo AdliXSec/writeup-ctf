@@ -36,3 +36,5 @@ EXPOSE 8190
 
 RUN echo "Listen 8190" >> /etc/apache2/ports.conf
 CMD ["apache2-foreground"]
+
+RUN rm -f /flag.txt && ln -s /tmp/flag.txt /flag.txt

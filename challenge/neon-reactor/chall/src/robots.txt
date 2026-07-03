@@ -1,0 +1,3 @@
+User-agent: *
+Disallow: /api/v1/diagnostic
+Disallow: /system_backups/

@@ -95,6 +95,25 @@ services:
     environment:
       - FLAG=${FLAG_SILENT_ORACLE}
 
+  neon-reactor:
+    build: ./neon-reactor/chall
+    container_name: ctf-neon-reactor
+    ports:
+      - "8180:80"
+    restart: unless-stopped
+    environment:
+      - FLAG=${FLAG_NEON_REACTOR}
+
+  optix-archiver:
+    build: ./optix-archiver/chall
+    container_name: ctf-optix-archiver
+    ports:
+      - "8190:8190"
+    restart: unless-stopped
+    environment:
+      - FLAG=${FLAG_OPTIX_ARCHIVER}
+    command: /bin/sh -c "echo $$FLAG > /flag.txt && apache2-foreground"
+
   resetter:
     image: docker:cli
     container_name: ctf-resetter

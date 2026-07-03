@@ -14,6 +14,10 @@ PROOF_PASSFORGE=PROOF{passforge_unlock_$rnd}
 FLAG_PAPERMAKER=LEEXY{papermaker_yaml_deserialization_rce_$rnd}
 FLAG_ARCHIVEDESK=LEEXY{archivedesk_weak_crypto_idor_$rnd}
 FLAG_BETORGANIZER=LEEXY{betorganizer_toctou_ssti_$rnd}
+FLAG_ACTION_PACKED=LEEXY{action_packed_broken_access_control_$rnd}
+FLAG_SILENT_ORACLE=LEEXY{silent_oracle_graphql_sqli_$rnd}
+FLAG_NEON_REACTOR=LEEXY{neon_reactor_magic_hash_mass_assignment_$rnd}
+FLAG_OPTIX_ARCHIVER=LEEXY{optix_archiver_imagetragick_lfi_$rnd}
 "@
     Set-Content -Path ".env" -Value $envContent
     

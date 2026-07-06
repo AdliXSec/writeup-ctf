@@ -4,7 +4,7 @@
 <div class="max-w-2xl mx-auto">
     <div class="glass rounded-xl p-8 shadow-2xl mb-8 border-t-4 border-emerald-500">
         <h2 class="text-2xl font-bold mb-2">Submit Flag</h2>
-        <p class="text-gray-400 mb-6">Peringatan: Flag akan expired/berubah secara otomatis setiap 20 menit. Segera submit flag yang baru Anda temukan!</p>
+        <p class="text-gray-400 mb-6">Peringatan: Instance dan flag Anda memiliki batas waktu. Segera submit flag yang Anda temukan!</p>
         
         <form id="submitForm">
             <div class="mb-4">
@@ -101,9 +101,9 @@ document.getElementById('submitForm').addEventListener('submit', async (e) => {
                 flagInput.value = '';
                 fetchMySolves(); // Refresh list
             } else if(result.status === 'duplicate') {
-                showFlash(`Flag ini sudah Anda submit pada sesi ini! Tunggu hingga flag berubah untuk poin tambahan.`, 'error');
+                showFlash(`Anda sudah pernah menyelesaikan tantangan ini! Di mode Jeopardy, poin hanya diberikan 1 kali.`, 'error');
             } else {
-                showFlash(`❌ Flag Salah atau telah di-reset (berubah)!`, 'error');
+                showFlash(`❌ ${result.detail || 'Flag salah atau expired!'}`, 'error');
             }
         } else {
             showFlash(data.detail || 'Gagal submit flag.', 'error');

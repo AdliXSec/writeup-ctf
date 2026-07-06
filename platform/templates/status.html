@@ -53,23 +53,19 @@ async function loadStatus() {
                     
                     <!-- Scheduler Panel -->
                     <div>
-                        <h2 class="text-xl font-bold border-b border-slate-700 pb-2 mb-4 text-white">Tick Scheduler</h2>
+                        <h2 class="text-xl font-bold border-b border-slate-700 pb-2 mb-4 text-white">Instance Manager</h2>
                         <ul class="space-y-3">
                             <li class="flex justify-between">
-                                <span class="text-gray-400">Scheduler State</span>
-                                <span class="font-bold text-sky-400 uppercase">${data.scheduler.state}</span>
+                                <span class="text-gray-400">Manager State</span>
+                                <span class="font-bold text-sky-400 uppercase">RUNNING</span>
                             </li>
                             <li class="flex justify-between">
-                                <span class="text-gray-400">Interval</span>
-                                <span class="text-white">${data.scheduler.interval_seconds} seconds</span>
+                                <span class="text-gray-400">Architecture</span>
+                                <span class="text-white">Dynamic On-Demand</span>
                             </li>
                             <li class="flex justify-between">
-                                <span class="text-gray-400">Current Tick</span>
-                                <span class="text-fuchsia-400 font-bold text-lg">#${data.current_tick.id}</span>
-                            </li>
-                            <li class="flex justify-between items-center bg-slate-800 p-3 rounded mt-2 border border-slate-700">
-                                <span class="text-sky-400 font-bold">Auto Reset Countdown</span>
-                                <span id="countdown-timer" class="text-3xl font-mono font-bold text-white">--:--</span>
+                                <span class="text-gray-400">Mode</span>
+                                <span class="text-fuchsia-400 font-bold text-lg">JEOPARDY CTF</span>
                             </li>
                         </ul>
                     </div>
@@ -87,10 +83,7 @@ async function loadStatus() {
             `;
             document.getElementById('status-container').innerHTML = html;
             
-            // start countdown
-            if(data.scheduler) {
-                startCountdown();
-            }
+            // No countdown needed for dynamic instancing
         } else {
             document.getElementById('status-container').innerHTML = `<p class="text-center text-rose-500 py-8">Gagal memuat status.</p>`;
         }
@@ -98,32 +91,6 @@ async function loadStatus() {
         console.error(e);
         document.getElementById('status-container').innerHTML = `<p class="text-center text-rose-500 py-8">Terjadi kesalahan jaringan.</p>`;
     }
-}
-
-let countdownInterval;
-
-function startCountdown() {
-    if(countdownInterval) clearInterval(countdownInterval);
-    
-    countdownInterval = setInterval(() => {
-        const now = Math.floor(Date.now() / 1000);
-        let diff = 1200 - (now % 1200);
-        
-        
-        const m = Math.floor(diff / 60).toString().padStart(2, '0');
-        const s = (diff % 60).toString().padStart(2, '0');
-        const el = document.getElementById('countdown-timer');
-        if(el) {
-            el.innerText = `${m}:${s}`;
-            if(diff <= 10) {
-                el.classList.add('text-rose-500');
-                el.classList.remove('text-white');
-            } else {
-                el.classList.add('text-white');
-                el.classList.remove('text-rose-500');
-            }
-        }
-    }, 1000);
 }
 
 document.addEventListener('DOMContentLoaded', () => {

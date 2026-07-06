@@ -4,13 +4,7 @@ echo -e "\033[0;36m    Starting 0xL33XY 2026 CTF Platform       \033[0m"
 echo -e "\033[0;36m=============================================\033[0m"
 echo ""
 
-# Ensure .env is a file, not a directory created by docker-compose
-if [ -d "challenge/.env" ]; then
-    rm -rf "challenge/.env"
-fi
-touch "challenge/.env"
-
-echo -e "\033[1;33m[1/2] Building and Starting Challenges & Game Server...\033[0m"
+echo -e "\033[1;33m[1/2] Building and Starting Instance Manager & Challenges...\033[0m"
 cd challenge || exit 1
 docker compose build
 docker compose up -d

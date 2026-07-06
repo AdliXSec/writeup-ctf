@@ -5,7 +5,7 @@ Write-Host "WARNING: This will DESTROY all databases, users, scores, and game st
 Write-Host "Press Ctrl+C to cancel, or wait 5 seconds to proceed..." -ForegroundColor Yellow
 Start-Sleep -Seconds 5
 
-Write-Host "[1/2] Destroying Challenges & Game Server state..." -ForegroundColor Cyan
+Write-Host "[1/2] Destroying Instance Manager & Challenges state..." -ForegroundColor Cyan
 Push-Location -Path "challenge"
 docker compose down -v
 if (Test-Path -Path ".env") {

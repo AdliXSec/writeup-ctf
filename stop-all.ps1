@@ -3,7 +3,7 @@ Write-Host "    Stopping 0xL33XY 2026 CTF Platform       " -ForegroundColor Cyan
 Write-Host "=============================================" -ForegroundColor Cyan
 Write-Host ""
 
-Write-Host "[1/2] Stopping Challenges & Game Server..." -ForegroundColor Yellow
+Write-Host "[1/2] Stopping Instance Manager & Challenges..." -ForegroundColor Yellow
 Push-Location -Path "challenge"
 docker compose down
 Pop-Location

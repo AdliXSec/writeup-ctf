@@ -9,3 +9,6 @@ api_reference.txt
 security-writeups/
 CHALLENGE.md
 test.php
+test_api.py
+migrate.py
+check.py

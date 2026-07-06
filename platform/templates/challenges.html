@@ -1,23 +1,106 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<div class="max-w-4xl mx-auto mt-10">
+<div class="max-w-5xl mx-auto mt-10">
     <div class="text-center mb-10">
         <h1 class="text-4xl font-bold mb-3 text-sky-400">Daftar Tantangan</h1>
-        <p class="text-gray-400">Tantangan yang saat ini sedang aktif (Live dari Server).</p>
+        <p class="text-gray-400">Tantangan CTF (On-Demand Instances).</p>
     </div>
     
+    <div id="error-container" class="mb-6"></div>
     <div id="challenges-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         <p class="col-span-full text-center text-gray-400 py-8">Memuat tantangan...</p>
     </div>
 </div>
 
 <script>
+let countdownIntervals = {};
+
+function showError(msg) {
+    const el = document.getElementById('error-container');
+    el.innerHTML = `<div class="bg-red-500/20 border border-red-500 text-red-400 p-4 rounded-lg flex justify-between">
+        <span>${msg}</span>
+        <button onclick="this.parentElement.remove()">✕</button>
+    </div>`;
+    setTimeout(() => { el.innerHTML = ''; }, 5000);
+}
+
+async function apiCall(endpoint, method, challengeName) {
+    try {
+        const res = await fetch(endpoint, {
+            method: method,
+            headers: { 
+                'Authorization': 'Bearer ' + token,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ challenge: challengeName })
+        });
+        const data = await res.json();
+        if(!res.ok) {
+            showError(data.error || 'Terjadi kesalahan.');
+            return false;
+        }
+        return true;
+    } catch(e) {
+        showError('Kesalahan jaringan.');
+        return false;
+    }
+}
+
+async function startInstance(chalName) {
+    if(await apiCall('/api/v2/game/instances/start', 'POST', chalName)) {
+        loadChallenges();
+    }
+}
+
+async function stopInstance(chalName) {
+    if(await apiCall('/api/v2/game/instances/stop', 'POST', chalName)) {
+        loadChallenges();
+    }
+}
+
+async function extendInstance(chalName) {
+    if(await apiCall('/api/v2/game/instances/extend', 'POST', chalName)) {
+        loadChallenges();
+    }
+}
+
+async function resetInstance(chalName) {
+    if(await apiCall('/api/v2/game/instances/reset', 'POST', chalName)) {
+        loadChallenges();
+    }
+}
+
+function updateTimers() {
+    document.querySelectorAll('[data-expires]').forEach(el => {
+        const expiresAt = new Date(el.dataset.expires).getTime();
+        const now = new Date().getTime();
+        const distance = expiresAt - now;
+
+        if (distance < 0) {
+            el.innerHTML = "EXPIRED";
+            el.classList.add('text-red-500');
+            el.classList.remove('text-emerald-400');
+            // Auto reload to clear it if expired
+            setTimeout(loadChallenges, 2000);
+            return;
+        }
+
+        const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+        const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+        
+        el.innerHTML = minutes + "m " + (seconds < 10 ? "0" : "") + seconds + "s";
+    });
+}
+
 async function loadChallenges() {
     if(!token) {
         window.location.href = '/login';
         return;
     }
+    
+    // Clear old intervals if reloading
+    if(window.timerInterval) clearInterval(window.timerInterval);
     
     try {
         const res = await fetch('/api/v2/challenges', {
@@ -35,28 +118,60 @@ async function loadChallenges() {
             
             let html = '';
             data.forEach(chal => {
-                const sourceBadge = chal.has_source_download 
-                    ? `<span class="bg-indigo-500/20 text-indigo-400 text-xs px-2 py-1 rounded">Source Available</span>` 
-                    : `<span class="bg-gray-700/50 text-gray-400 text-xs px-2 py-1 rounded">No Source</span>`;
-                    
+                const isRunning = chal.instance.status === 'running';
+                
                 html += `
-                    <div class="glass rounded-xl p-6 shadow-lg hover:-translate-y-1 transition duration-300 border-t-2 border-sky-500">
+                    <div class="glass rounded-xl p-6 shadow-lg transition duration-300 border-t-2 ${isRunning ? 'border-emerald-500 ring-1 ring-emerald-500/20' : 'border-slate-700 hover:border-sky-500'}">
                         <div class="flex justify-between items-start mb-4">
                             <h3 class="text-xl font-bold text-white uppercase">${chal.name}</h3>
                             <span class="text-gray-500 text-sm">#${chal.id}</span>
                         </div>
-                        <div class="mb-4">
-                            ${sourceBadge}
-                        </div>
-                        <div class="mb-4 flex items-center gap-2">
-                            <span class="text-xs text-gray-500 uppercase tracking-wider">Target Endpoint:</span>
-                            <span class="font-mono text-sm text-emerald-400 bg-slate-900 px-2 py-1 rounded select-all border border-slate-700">${chal.endpoint || 'Unknown'}</span>
-                        </div>
-                        <a href="/submit" class="inline-block mt-2 text-sm text-sky-400 hover:text-sky-300 hover:underline">Submit Flag &rarr;</a>
-                    </div>
                 `;
+                
+                if(isRunning) {
+                    html += `
+                        <div class="mb-4 bg-slate-900/50 p-3 rounded border border-slate-700">
+                            <div class="flex justify-between items-center mb-2">
+                                <span class="text-xs text-gray-400 uppercase tracking-wider">Status:</span>
+                                <span class="text-xs text-emerald-400 font-bold px-2 py-1 bg-emerald-500/10 rounded border border-emerald-500/20">RUNNING</span>
+                            </div>
+                            <div class="flex justify-between items-center mb-2">
+                                <span class="text-xs text-gray-400 uppercase tracking-wider">Target:</span>
+                                <span class="font-mono text-sm text-sky-400 select-all">${chal.instance.endpoint}</span>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span class="text-xs text-gray-400 uppercase tracking-wider">Sisa Waktu:</span>
+                                <span class="font-mono text-sm text-emerald-400 font-bold" data-expires="${chal.instance.expires_at}">Menghitung...</span>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-3 gap-2">
+                            <button onclick="extendInstance('${chal.name}')" class="text-xs bg-sky-500/20 hover:bg-sky-500/40 text-sky-400 p-2 rounded transition" title="Tambah 5 Menit">+5m</button>
+                            <button onclick="resetInstance('${chal.name}')" class="text-xs bg-amber-500/20 hover:bg-amber-500/40 text-amber-400 p-2 rounded transition" title="Factory Reset">Reset</button>
+                            <button onclick="stopInstance('${chal.name}')" class="text-xs bg-red-500/20 hover:bg-red-500/40 text-red-400 p-2 rounded transition" title="Hentikan">Stop</button>
+                        </div>
+                        <div class="mt-4 text-center border-t border-slate-700/50 pt-3">
+                            <a href="/submit" class="text-sm text-sky-400 hover:text-sky-300 hover:underline">Submit Flag &rarr;</a>
+                        </div>
+                    `;
+                } else {
+                    html += `
+                        <div class="mb-4 flex items-center justify-center h-24 bg-slate-900/30 rounded border border-slate-800">
+                            <span class="text-gray-500 text-sm">Instance Tidak Aktif</span>
+                        </div>
+                        <button onclick="startInstance('${chal.name}')" class="w-full bg-sky-600 hover:bg-sky-500 text-white font-bold py-2 px-4 rounded transition flex items-center justify-center gap-2">
+                            <span>▶</span> Start Instance
+                        </button>
+                    `;
+                }
+                
+                html += `</div>`;
             });
             container.innerHTML = html;
+            
+            // Start the timer loop
+            window.timerInterval = setInterval(updateTimers, 1000);
+            updateTimers(); // run once immediately
+            
         } else {
             document.getElementById('challenges-container').innerHTML = `<p class="col-span-full text-center text-rose-500 py-8">Gagal memuat daftar tantangan.</p>`;
         }

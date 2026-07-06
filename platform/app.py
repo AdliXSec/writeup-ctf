@@ -2,13 +2,14 @@ import os
 import sqlite3
 import jwt
 import datetime
+import requests as http_requests
 from functools import wraps
 from flask import Flask, render_template, request, redirect, url_for, session, flash, g, jsonify, make_response
 from werkzeug.security import generate_password_hash, check_password_hash
 
 app = Flask(__name__)
 DB_PATH = '/app/data/scoreboard.db'
-ENV_PATH = '/app/.env'
+INSTANCE_MANAGER_URL = os.environ.get('INSTANCE_MANAGER_URL', 'http://ctf-instance-manager:9000')
 
 def get_or_create_secret():
     secret_path = '/app/data/secret.key'
@@ -55,28 +56,58 @@ def init_db():
                 user_id INTEGER NOT NULL,
                 challenge_id TEXT NOT NULL,
                 flag_value TEXT NOT NULL,
-                tick INTEGER DEFAULT 1,
                 solved_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY(user_id) REFERENCES users(id),
-                UNIQUE(user_id, flag_value)
+                UNIQUE(user_id, challenge_id)
             );
         ''')
-        try:
-            conn.execute('ALTER TABLE solves ADD COLUMN tick INTEGER DEFAULT 1')
-        except sqlite3.OperationalError:
-            pass
     except sqlite3.OperationalError:
         pass
 
-def get_current_flags():
-    flags = {}
-    if os.path.exists(ENV_PATH):
-        with open(ENV_PATH, 'r') as f:
-            for line in f:
-                if '=' in line:
-                    key, val = line.strip().split('=', 1)
-                    flags[key] = val
-    return flags
+
+# ---------------------------------------------------------------------------
+# Instance Manager communication
+# ---------------------------------------------------------------------------
+def im_provision(team_id):
+    """Ask Instance Manager to create containers for a team."""
+    try:
+        resp = http_requests.post(
+            f"{INSTANCE_MANAGER_URL}/provision",
+            json={"team_id": team_id},
+            timeout=120,
+        )
+        return resp.json()
+    except Exception as exc:
+        return {"error": str(exc)}
+
+
+def im_get_instances(team_id):
+    """Get port mapping for a team from Instance Manager."""
+    try:
+        resp = http_requests.get(
+            f"{INSTANCE_MANAGER_URL}/instances/{team_id}",
+            timeout=10,
+        )
+        if resp.status_code == 200:
+            return resp.json().get("instances", {})
+        return None
+    except Exception:
+        return None
+
+
+def im_get_all_flags():
+    """Get all flags from Instance Manager for submit validation."""
+    try:
+        resp = http_requests.get(
+            f"{INSTANCE_MANAGER_URL}/all-flags",
+            timeout=10,
+        )
+        if resp.status_code == 200:
+            return resp.json()
+        return {}
+    except Exception:
+        return {}
+
 
 # --- MIDDLEWARE JWT ---
 def jwt_required(f):
@@ -139,68 +170,114 @@ def api_session():
         "role": "captain"
     })
 
+# ── ON-DEMAND INSTANCE ENDPOINTS ──
+
+@app.route('/api/v2/game/instances/start', methods=['POST'])
+@jwt_required
+def api_instance_start():
+    data = request.get_json(silent=True) or {}
+    chal_name = data.get("challenge")
+    if not chal_name:
+        return jsonify({"error": "challenge name required"}), 400
+        
+    resp = http_requests.post(
+        f"{INSTANCE_MANAGER_URL}/instances/start",
+        json={"team_id": g.user['id'], "challenge": chal_name},
+        timeout=120
+    )
+    return make_response(resp.content, resp.status_code)
+
+@app.route('/api/v2/game/instances/stop', methods=['POST'])
+@jwt_required
+def api_instance_stop():
+    data = request.get_json(silent=True) or {}
+    chal_name = data.get("challenge")
+    resp = http_requests.post(
+        f"{INSTANCE_MANAGER_URL}/instances/stop",
+        json={"team_id": g.user['id'], "challenge": chal_name},
+        timeout=10
+    )
+    return make_response(resp.content, resp.status_code)
+
+@app.route('/api/v2/game/instances/extend', methods=['POST'])
+@jwt_required
+def api_instance_extend():
+    data = request.get_json(silent=True) or {}
+    chal_name = data.get("challenge")
+    resp = http_requests.post(
+        f"{INSTANCE_MANAGER_URL}/instances/extend",
+        json={"team_id": g.user['id'], "challenge": chal_name},
+        timeout=10
+    )
+    return make_response(resp.content, resp.status_code)
+
+@app.route('/api/v2/game/instances/reset', methods=['POST'])
+@jwt_required
+def api_instance_reset():
+    data = request.get_json(silent=True) or {}
+    chal_name = data.get("challenge")
+    # Reset is basically stop then start
+    http_requests.post(
+        f"{INSTANCE_MANAGER_URL}/instances/stop",
+        json={"team_id": g.user['id'], "challenge": chal_name},
+        timeout=10
+    )
+    resp = http_requests.post(
+        f"{INSTANCE_MANAGER_URL}/instances/start",
+        json={"team_id": g.user['id'], "challenge": chal_name},
+        timeout=120
+    )
+    return make_response(resp.content, resp.status_code)
+
 @app.route('/api/v2/challenges', methods=['GET'])
 @jwt_required
 def api_challenges():
-    flags = get_current_flags()
+    team_id = g.user['id']
+    instances = im_get_instances(team_id) or {}
     
-    port_map = {
-        'FLAG_FETCHER': '5000',
-        'FLAG_NSLOOKUP': '5001',
-        'FLAG_GAGWIKI': '5002',
-        'FLAG_SVG_VIEWER': '8888',
-        'FLAG_PASSFORGE': '8120',
-        'FLAG_PAPERMAKER': '8130',
-        'FLAG_BETORGANIZER': '8140',
-        'FLAG_ARCHIVEDESK': '8150',
-        'FLAG_ACTION_PACKED': '8160',
-        'FLAG_SILENT_ORACLE': '8170',
-        'FLAG_NEON_REACTOR': '8180',
-        'FLAG_OPTIX_ARCHIVER': '8190'
-    }
-    
+    # We need a list of all challenges. We can fetch it from health endpoint or hardcode
+    all_challenges = [
+        "fetcher", "nslookup", "gag-wiki", "svg-viewer",
+        "passforge", "papermaker", "betorganizer", "archivedesk",
+        "action-packed", "silent-oracle", "neon-reactor", "optix-archiver"
+    ]
+
+    host = os.environ.get('CTF_HOST', 'localhost')
     chal_list = []
-    for i, chal_id in enumerate(flags.keys()):
-        # Filter out proofs and meta
-        if chal_id.startswith('PROOF_') or chal_id == 'CTF_TICK': continue
-        
-        chal_list.append({
+    
+    for i, name in enumerate(all_challenges):
+        chal_info = {
             "id": i + 1,
-            "name": chal_id.replace('FLAG_', '').lower(),
+            "name": name,
             "has_source_download": False,
-            "endpoint": f"localhost:{port_map.get(chal_id, '80')}"
-        })
+            "instance": {
+                "status": "stopped"
+            }
+        }
+        
+        if name in instances:
+            chal_info["instance"]["status"] = "running"
+            chal_info["instance"]["endpoint"] = f"{host}:{instances[name]['port']}"
+            chal_info["instance"]["expires_at"] = instances[name]["expires_at"]
+            
+        chal_list.append(chal_info)
+
     return jsonify(chal_list)
 
 @app.route('/api/v2/game/status', methods=['GET'])
 @jwt_required
 def api_game_status():
     import time
-    try:
-        last_reset = os.path.getmtime(ENV_PATH)
-    except:
-        last_reset = time.time()
-        
-    flags = get_current_flags()
-    current_tick = int(flags.get('CTF_TICK', 1))
-        
     return jsonify({
         "match": {
             "state": "running",
             "started_at": "2026-06-29T00:00:00+00:00",
             "accepting_submissions": True
         },
-        "current_tick": {
-            "id": current_tick,
-            "status": "completed"
-        },
+        "mode": "dynamic_instancing",
         "scheduler": {
             "state": "running",
-            "interval_seconds": 1200,
-            "last_tick_id": current_tick,
-            "last_reset_time": last_reset
         },
-        "total_ticks": current_tick
     })
 
 @app.route('/api/v2/scoreboard', methods=['GET'])
@@ -234,7 +311,7 @@ def api_scoreboard():
 def api_attacks():
     conn = get_db()
     query = '''
-        SELECT s.id, u.username, s.challenge_id, s.solved_at, s.tick 
+        SELECT s.id, u.username, s.challenge_id, s.solved_at
         FROM solves s 
         JOIN users u ON s.user_id = u.id 
         ORDER BY s.solved_at DESC LIMIT 50
@@ -247,9 +324,9 @@ def api_attacks():
             "id": f"solve-{row['id']}",
             "attacker": row['username'],
             "victim": "System",
-            "service": row['challenge_id'].replace('FLAG_', '').lower(),
-            "tick": row['tick'],
-            "verdict": "first valid submission accepted"
+            "service": row['challenge_id'],
+            "verdict": "first valid submission accepted",
+            "solved_at": row['solved_at']
         })
     return jsonify({
         "items": items,
@@ -266,26 +343,41 @@ def api_submit():
     data = request.get_json(silent=True)
     if not isinstance(data, list):
         return jsonify({"type": "about:blank", "title": "Bad Request", "status": 400, "detail": "Expected array of flags"}), 400
-        
-    current_flags = get_current_flags()
-    current_tick = int(current_flags.get('CTF_TICK', 1))
     
+    # Build a reverse lookup: flag_value -> (team_id, challenge_name)
+    all_flags = im_get_all_flags()
+    flag_lookup = {}
+    for tid, challenges in all_flags.items():
+        for chal_name, flag_val in challenges.items():
+            flag_lookup[flag_val] = (int(tid), chal_name)
+
+    submitter_team_id = g.user['id']
     results = []
     accepted = 0
     rejected = 0
     
     conn = get_db()
     for submitted_flag in data:
-        solved_challenge_id = None
-        for chal_id, correct_flag in current_flags.items():
-            if submitted_flag == correct_flag:
-                solved_challenge_id = chal_id
-                break
-                
-        if solved_challenge_id:
+        match = flag_lookup.get(submitted_flag)
+        
+        if match:
+            instance_team_id, challenge_name = match
+
+            # Jeopardy Mode: You MUST submit your own instance's flag.
+            if instance_team_id != submitter_team_id:
+                results.append({
+                    "flag": submitted_flag,
+                    "status": "rejected",
+                    "detail": "Flag valid, tetapi ini bukan flag dari instance milik tim Anda!"
+                })
+                rejected += 1
+                continue
+
             try:
-                conn.execute('INSERT INTO solves (user_id, challenge_id, flag_value, tick) VALUES (?, ?, ?, ?)', 
-                             (g.user['id'], solved_challenge_id, submitted_flag, current_tick))
+                conn.execute(
+                    'INSERT INTO solves (user_id, challenge_id, flag_value) VALUES (?, ?, ?)', 
+                    (submitter_team_id, challenge_name, submitted_flag)
+                )
                 conn.commit()
                 results.append({
                     "flag": submitted_flag,

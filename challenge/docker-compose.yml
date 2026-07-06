@@ -1,175 +1,91 @@
+# =============================================================================
+# CTF Challenge Stack — Dynamic Instancing
+# =============================================================================
+# Usage:
+#   docker compose build                    # Build all challenge images
+#   docker compose up -d                    # Start instance manager only
+#   curl -X POST http://localhost:9000/provision -d '{"team_id":1}'
+# =============================================================================
+
 services:
+  # ── Instance Manager (always runs) ──
+  instance-manager:
+    build: ./instance_manager
+    container_name: ctf-instance-manager
+    ports:
+      - "9000:9000"
+    volumes:
+      - //var/run/docker.sock:/var/run/docker.sock
+      - instance_data:/data
+    restart: unless-stopped
+    networks:
+      - ctf-net
+
+  # ── Challenge Images (build-only, not started by `docker compose up`) ──
   fetcher:
     build: ./fetcher/chall
-    container_name: ctf-fetcher
-    ports:
-      - "5000:5000"
-    restart: unless-stopped
-    read_only: true
-    tmpfs:
-      - /tmp
-    environment:
-      - FLAG=${FLAG_FETCHER}
+    image: ctf-fetcher
+    profiles: ["build"]
 
   nslookup:
     build: ./nslookup/chall
-    container_name: ctf-nslookup
-    ports:
-      - "5001:5001"
-    restart: unless-stopped
-    read_only: true
-    tmpfs:
-      - /tmp
-      - /app/uploads
-    environment:
-      - FLAG=${FLAG_NSLOOKUP}
+    image: ctf-nslookup
+    profiles: ["build"]
 
   gag-wiki:
     build: ./gag-wiki/chall
-    container_name: ctf-gagwiki
-    ports:
-      - "5002:5002"
-    restart: unless-stopped
-    read_only: true
-    tmpfs:
-      - /tmp
-    environment:
-      - FLAG=${FLAG_GAGWIKI}
+    image: ctf-gagwiki
+    profiles: ["build"]
 
   svg-viewer:
     build: ./svg-viewer/chall
-    container_name: ctf-svgviewer
-    ports:
-      - "8888:80"
-    restart: unless-stopped
-    read_only: true
-    tmpfs:
-      - /tmp
-      - /run
-      - /var/www/html/uploads
-    environment:
-      - FLAG=${FLAG_SVG_VIEWER}
-    command: /bin/sh -c "echo $$FLAG > /flag.txt && apache2-foreground"
+    image: ctf-svgviewer
+    profiles: ["build"]
 
   passforge:
     build: ./passforge/chall
-    container_name: ctf-passforge
-    ports:
-      - "8120:8120"
-    restart: unless-stopped
-    read_only: true
-    tmpfs:
-      - /tmp
-      - /opt/ad/state
-    environment:
-      - FLAG=${FLAG_PASSFORGE}
-      - PROOF=${PROOF_PASSFORGE}
-    command: /bin/sh -c "echo $$FLAG > /flag.txt && echo $$PROOF > /proof.txt && python service.py"
+    image: ctf-passforge
+    profiles: ["build"]
 
   papermaker:
     build: ./papermaker/chall
-    container_name: ctf-papermaker
-    ports:
-      - "8130:8130"
-    restart: unless-stopped
-    read_only: true
-    tmpfs:
-      - /tmp
-      - /app/tmp
-      - /app/log
-      - /app/storage
-    environment:
-      - FLAG=${FLAG_PAPERMAKER}
-    command: /bin/sh -c "echo $$FLAG > /flag.txt && mkdir -p tmp/pids && bundle exec rake db:setup && bundle exec rackup --host 0.0.0.0 -p 8130"
-
-  archivedesk:
-    build: ./archivedesk/chall
-    container_name: ctf-archivedesk
-    ports:
-      - "8150:8150"
-    environment:
-      - PORT=8150
-      - FLAG=${FLAG_ARCHIVEDESK}
-    restart: unless-stopped
-    read_only: true
-    tmpfs:
-      - /tmp
-      - /run
-      - /opt/ad/state:exec,mode=0755
-      - /etc/ssh/sshd_config.d
+    image: ctf-papermaker
+    profiles: ["build"]
 
   betorganizer:
     build: ./betorganizer/chall
-    container_name: ctf-betorganizer
-    ports:
-      - "8140:8140"
-    restart: unless-stopped
-    read_only: true
-    tmpfs:
-      - /tmp
-      - /opt/ad/state
-    environment:
-      - FLAG=${FLAG_BETORGANIZER}
-    command: /bin/sh -c "echo $$FLAG > /flag.txt && ./betorganizer"
+    image: ctf-betorganizer
+    profiles: ["build"]
+
+  archivedesk:
+    build: ./archivedesk/chall
+    image: ctf-archivedesk
+    profiles: ["build"]
 
   action-packed:
     build: ./action-packed/chall
-    container_name: ctf-action-packed
-    ports:
-      - "8160:8160"
-    restart: unless-stopped
-    read_only: true
-    tmpfs:
-      - /tmp
-    environment:
-      - FLAG=${FLAG_ACTION_PACKED}
+    image: ctf-action-packed
+    profiles: ["build"]
 
   silent-oracle:
     build: ./silent-oracle/chall
-    container_name: ctf-silent-oracle
-    ports:
-      - "8170:8170"
-    restart: unless-stopped
-    read_only: true
-    tmpfs:
-      - /tmp
-    environment:
-      - FLAG=${FLAG_SILENT_ORACLE}
+    image: ctf-silent-oracle
+    profiles: ["build"]
 
   neon-reactor:
     build: ./neon-reactor/chall
-    container_name: ctf-neon-reactor
-    ports:
-      - "8180:80"
-    restart: unless-stopped
-    read_only: true
-    tmpfs:
-      - /tmp
-      - /run
-    environment:
-      - FLAG=${FLAG_NEON_REACTOR}
+    image: ctf-neon-reactor
+    profiles: ["build"]
 
   optix-archiver:
     build: ./optix-archiver/chall
-    container_name: ctf-optix-archiver
-    ports:
-      - "8190:8190"
-    restart: unless-stopped
-    read_only: true
-    tmpfs:
-      - /tmp
-      - /run
-      - /var/www/html/uploads
-    environment:
-      - FLAG=${FLAG_OPTIX_ARCHIVER}
-    command: /bin/sh -c "echo $$FLAG > /flag.txt && apache2-foreground"
+    image: ctf-optix-archiver
+    profiles: ["build"]
 
-  resetter:
-    image: docker:cli
-    container_name: ctf-resetter
-    volumes:
-      - //var/run/docker.sock:/var/run/docker.sock
-      - ./:/challenge
-    working_dir: /challenge
-    command: /bin/sh game_server.sh
-    restart: unless-stopped
+volumes:
+  instance_data:
+
+networks:
+  ctf-net:
+    name: ctf-net
+    driver: bridge

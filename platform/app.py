@@ -572,11 +572,11 @@ def attacks():
 
 @app.route('/admin')
 def admin():
-    return render_template('admin.html')
+    return render_template('admin/dashboard.html')
 
 @app.route('/admin/login')
 def admin_login():
-    return render_template('admin_login.html')
+    return render_template('admin/login.html')
 
 if __name__ == '__main__':
     os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)

@@ -20,6 +20,9 @@ from flask import Flask, request, jsonify
 import docker
 
 # ---------------------------------------------------------------------------
+import json
+import zipfile
+import shutil
 # Configuration
 # ---------------------------------------------------------------------------
 app = Flask(__name__)
@@ -177,7 +180,25 @@ CHALLENGES = [
         "env_extra": {},
     },
 ]
-CHALLENGE_MAP = {c["name"]: c for c in CHALLENGES}
+
+def get_challenge_config(challenge_name):
+    """Fetch challenge configuration from database."""
+    conn = get_db()
+    row = conn.execute("SELECT * FROM challenge_configs WHERE name = ?", (challenge_name,)).fetchone()
+    conn.close()
+    if not row:
+        return None
+    
+    return {
+        "name": row["name"],
+        "image": row["image"],
+        "internal_port": row["internal_port"],
+        "offset": row["offset"],
+        "flag_desc": row["flag_desc"],
+        "tmpfs": json.loads(row["tmpfs"]) if row["tmpfs"] else {},
+        "command": json.loads(row["command"]) if row["command"] else None,
+        "env_extra": json.loads(row["env_extra"]) if row["env_extra"] else {}
+    }
 
 # ---------------------------------------------------------------------------
 # Database helpers
@@ -206,7 +227,34 @@ def init_db():
             last_extended_at DATETIME,
             UNIQUE(team_id, challenge)
         );
+        CREATE TABLE IF NOT EXISTS challenge_configs (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT UNIQUE NOT NULL,
+            image TEXT NOT NULL,
+            internal_port INTEGER NOT NULL,
+            offset INTEGER NOT NULL,
+            flag_desc TEXT,
+            tmpfs TEXT,
+            command TEXT,
+            env_extra TEXT
+        );
     """)
+    
+    # Seed challenge_configs if empty
+    row = conn.execute("SELECT COUNT(*) as c FROM challenge_configs").fetchone()
+    if row["c"] == 0:
+        log.info("Seeding challenge_configs table from hardcoded list...")
+        for c in CHALLENGES:
+            conn.execute('''
+                INSERT INTO challenge_configs (name, image, internal_port, offset, flag_desc, tmpfs, command, env_extra)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            ''', (
+                c["name"], c["image"], c["internal_port"], c["offset"], c["flag_desc"],
+                json.dumps(c["tmpfs"]) if c.get("tmpfs") else None,
+                json.dumps(c["command"]) if c.get("command") else None,
+                json.dumps(c["env_extra"]) if c.get("env_extra") else None
+            ))
+        conn.commit()
     conn.close()
 
 
@@ -253,7 +301,7 @@ def ensure_network(client):
 
 def start_challenge_instance(team_id, challenge_name):
     """Start a specific challenge instance for a team."""
-    chal = CHALLENGE_MAP.get(challenge_name)
+    chal = get_challenge_config(challenge_name)
     if not chal:
         return False, "Challenge not found"
 
@@ -525,6 +573,87 @@ def api_all_flags():
         result[tid][row["challenge"]] = row["flag_value"]
     return jsonify(result)
 
+@app.route("/admin/build", methods=["POST"])
+def api_admin_build():
+    """Endpoint for auto-building a challenge from a zip file."""
+    if 'file' not in request.files:
+        return jsonify({"error": "No file part"}), 400
+        
+    file = request.files['file']
+    name = request.form.get('name')
+    if not file or not name:
+        return jsonify({"error": "Missing file or name"}), 400
+        
+    # Save and extract
+    build_dir = os.path.join(DATA_DIR, 'builds', name)
+    os.makedirs(build_dir, exist_ok=True)
+    zip_path = os.path.join(build_dir, 'chall.zip')
+    file.save(zip_path)
+    
+    try:
+        with zipfile.ZipFile(zip_path, 'r') as zip_ref:
+            zip_ref.extractall(build_dir)
+            
+        chall_dir = os.path.join(build_dir, 'chall')
+        if not os.path.exists(chall_dir):
+            return jsonify({"error": "Zip file must contain a 'chall' folder"}), 400
+            
+        config_path = os.path.join(chall_dir, 'config.json')
+        if not os.path.exists(config_path):
+            return jsonify({"error": "Missing config.json in chall folder"}), 400
+            
+        with open(config_path, 'r') as f:
+            config = json.load(f)
+            
+        # Build Docker Image
+        log.info(f"Building docker image ctf-{name} from {chall_dir}...")
+        client = get_docker()
+        image, build_logs = client.images.build(path=chall_dir, tag=f"ctf-{name}", rm=True)
+        log.info(f"Built image: {image.tags}")
+        
+        # Save to DB
+        conn = get_db()
+        # Check if already exists
+        existing = conn.execute("SELECT id FROM challenge_configs WHERE name = ?", (name,)).fetchone()
+        if existing:
+            conn.execute('''
+                UPDATE challenge_configs 
+                SET image=?, internal_port=?, flag_desc=?, tmpfs=?, command=?, env_extra=?
+                WHERE name=?
+            ''', (
+                f"ctf-{name}", config.get("internal_port", 80), config.get("flag_desc", f"{name}_flag"),
+                json.dumps(config.get("tmpfs")) if config.get("tmpfs") else None,
+                json.dumps(config.get("command")) if config.get("command") else None,
+                json.dumps(config.get("env_extra")) if config.get("env_extra") else None,
+                name
+            ))
+        else:
+            max_offset_row = conn.execute("SELECT MAX(offset) as m FROM challenge_configs").fetchone()
+            next_offset = (max_offset_row["m"] or 0) + 1
+            
+            conn.execute('''
+                INSERT INTO challenge_configs (name, image, internal_port, offset, flag_desc, tmpfs, command, env_extra)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            ''', (
+                name, f"ctf-{name}", config.get("internal_port", 80), next_offset, config.get("flag_desc", f"{name}_flag"),
+                json.dumps(config.get("tmpfs")) if config.get("tmpfs") else None,
+                json.dumps(config.get("command")) if config.get("command") else None,
+                json.dumps(config.get("env_extra")) if config.get("env_extra") else None
+            ))
+        conn.commit()
+        conn.close()
+        
+        # Cleanup
+        shutil.rmtree(build_dir)
+        
+        return jsonify({"status": "success", "message": f"Successfully built and registered ctf-{name}"})
+        
+    except Exception as e:
+        log.error(f"Failed to build challenge {name}: {str(e)}")
+        # Try cleanup
+        try: shutil.rmtree(build_dir) 
+        except: pass
+        return jsonify({"error": str(e)}), 500
 
 # ---------------------------------------------------------------------------
 # Main

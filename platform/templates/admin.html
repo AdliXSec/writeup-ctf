@@ -1,0 +1,219 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto mt-10">
+    <div class="text-center mb-10">
+        <h1 class="text-4xl font-bold mb-3 text-sky-400">Admin Dashboard</h1>
+        <p class="text-gray-400">Manage challenges and monitor the CTF platform.</p>
+    </div>
+
+    <!-- Alert Container -->
+    <div id="admin-alert" class="hidden mb-6 p-4 rounded-lg border"></div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        
+        <!-- Upload Form Column -->
+        <div class="lg:col-span-1">
+            <div class="glass rounded-xl p-6 shadow-lg border-t-2 border-sky-500">
+                <h2 class="text-2xl font-bold text-white mb-6">Tambahkan Tantangan Baru</h2>
+                
+                <form id="upload-form" class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-300 mb-1">Nama Challenge</label>
+                        <input type="text" id="chal-name" required class="w-full bg-slate-900/50 border border-slate-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-sky-500" placeholder="contoh: sql-injection-101">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-300 mb-1">Kategori</label>
+                        <select id="chal-category" class="w-full bg-slate-900/50 border border-slate-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-sky-500">
+                            <option value="Web">Web Exploitation</option>
+                            <option value="Pwn">Binary Exploitation</option>
+                            <option value="Crypto">Cryptography</option>
+                            <option value="Rev">Reverse Engineering</option>
+                            <option value="Forensics">Digital Forensics</option>
+                            <option value="Misc">Miscellaneous</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-300 mb-1">Base Points</label>
+                        <input type="number" id="chal-points" required min="50" max="1000" value="100" class="w-full bg-slate-900/50 border border-slate-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-sky-500">
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-300 mb-1">Deskripsi Tantangan</label>
+                        <textarea id="chal-desc" rows="3" class="w-full bg-slate-900/50 border border-slate-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-sky-500" placeholder="Jelaskan sedikit tentang tantangan ini..."></textarea>
+                    </div>
+
+                    <!-- File Upload Dropzone -->
+                    <div class="mt-4">
+                        <label class="block text-sm font-medium text-gray-300 mb-1">Upload File ZIP</label>
+                        <div class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-slate-700 border-dashed rounded-lg hover:border-sky-500 transition cursor-pointer" id="dropzone" onclick="document.getElementById('chal-zip').click()">
+                            <div class="space-y-1 text-center">
+                                <svg class="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48" aria-hidden="true">
+                                    <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                                </svg>
+                                <div class="flex text-sm text-gray-400 justify-center">
+                                    <label for="chal-zip" class="relative cursor-pointer bg-transparent rounded-md font-medium text-sky-400 hover:text-sky-300 focus-within:outline-none">
+                                        <span>Pilih file chall.zip</span>
+                                        <input id="chal-zip" name="chal-zip" type="file" accept=".zip" class="sr-only">
+                                    </label>
+                                    <p class="pl-1">atau seret ke sini</p>
+                                </div>
+                                <p class="text-xs text-gray-500">Maksimal 50MB</p>
+                                <p id="file-name-display" class="text-sm font-bold text-emerald-400 mt-2 hidden"></p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button type="submit" id="submit-btn" class="w-full mt-6 bg-sky-600 hover:bg-sky-500 text-white font-bold py-3 px-4 rounded-lg transition duration-200 shadow-lg shadow-sky-500/20">
+                        Upload & Build Image 🚀
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Challenges Table Column -->
+        <div class="lg:col-span-2">
+            <div class="glass rounded-xl p-6 shadow-lg">
+                <h2 class="text-2xl font-bold text-white mb-6">Daftar Tantangan Aktif</h2>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-slate-800/50 border-b border-slate-700">
+                                <th class="py-3 px-4 font-semibold text-gray-300">ID</th>
+                                <th class="py-3 px-4 font-semibold text-gray-300">Nama</th>
+                                <th class="py-3 px-4 font-semibold text-gray-300">Kategori</th>
+                                <th class="py-3 px-4 font-semibold text-gray-300">Poin</th>
+                                <th class="py-3 px-4 font-semibold text-gray-300 text-right">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="admin-challenges-table">
+                            <tr><td colspan="5" class="py-6 text-center text-gray-500">Memuat tantangan...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script>
+// Prevent unauthorized access visually (auth will still be enforced by backend)
+const adminToken = localStorage.getItem('admin_token');
+if(!adminToken) {
+    window.location.href = '/admin/login';
+}
+
+const fileInput = document.getElementById('chal-zip');
+const fileNameDisplay = document.getElementById('file-name-display');
+
+fileInput.addEventListener('change', function(e) {
+    if(this.files && this.files[0]) {
+        fileNameDisplay.textContent = this.files[0].name;
+        fileNameDisplay.classList.remove('hidden');
+    } else {
+        fileNameDisplay.classList.add('hidden');
+    }
+});
+
+async function loadAdminChallenges() {
+    try {
+        const res = await fetch('/api/v2/challenges', {
+            headers: { 'Authorization': 'Bearer ' + adminToken }
+        });
+        
+        if(res.status === 401 || res.status === 403) {
+            localStorage.removeItem('admin_token');
+            window.location.href = '/admin/login';
+            return;
+        }
+        
+        if(res.ok) {
+            const data = await res.json();
+            const tbody = document.getElementById('admin-challenges-table');
+            
+            if(data.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" class="py-6 text-center text-gray-500">Belum ada tantangan di database.</td></tr>`;
+                return;
+            }
+            
+            let html = '';
+            data.forEach(chal => {
+                html += `
+                    <tr class="border-b border-slate-700/50 hover:bg-slate-800/30 transition">
+                        <td class="py-3 px-4 text-gray-400">#${chal.id}</td>
+                        <td class="py-3 px-4 font-bold text-white">${chal.name}</td>
+                        <td class="py-3 px-4 text-sky-400 text-sm">${chal.category}</td>
+                        <td class="py-3 px-4 text-fuchsia-400 font-mono">${chal.points} pts</td>
+                        <td class="py-3 px-4 text-right">
+                            <button class="text-xs bg-rose-500/20 hover:bg-rose-500/40 text-rose-400 px-3 py-1.5 rounded transition" onclick="alert('Fitur Delete akan diimplementasi di langkah selanjutnya!')">Delete</button>
+                        </td>
+                    </tr>
+                `;
+            });
+            tbody.innerHTML = html;
+        }
+    } catch(e) {
+        console.error(e);
+    }
+}
+
+document.getElementById('upload-form').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const btn = document.getElementById('submit-btn');
+    const alertBox = document.getElementById('admin-alert');
+    
+    const file = document.getElementById('chal-zip').files[0];
+    if(!file) {
+        alertBox.textContent = 'Harap pilih file ZIP terlebih dahulu!';
+        alertBox.className = 'mb-6 p-4 rounded-lg border bg-rose-500/20 border-rose-500 text-rose-400';
+        alertBox.classList.remove('hidden');
+        return;
+    }
+    
+    const formData = new FormData();
+    formData.append('name', document.getElementById('chal-name').value);
+    formData.append('category', document.getElementById('chal-category').value);
+    formData.append('points', document.getElementById('chal-points').value);
+    formData.append('description', document.getElementById('chal-desc').value);
+    formData.append('file', file);
+    
+    btn.disabled = true;
+    btn.innerHTML = `<span class="animate-pulse">Building Docker Image... (Jangan ditutup) ⏳</span>`;
+    alertBox.classList.add('hidden');
+    
+    try {
+        const res = await fetch('/api/v2/admin/challenges', {
+            method: 'POST',
+            headers: { 'Authorization': 'Bearer ' + adminToken },
+            body: formData
+        });
+        
+        const data = await res.json();
+        if(res.ok) {
+            alertBox.textContent = 'Sukses! Challenge berhasil dibuat dan Docker Image siap dijalankan.';
+            alertBox.className = 'mb-6 p-4 rounded-lg border bg-emerald-500/20 border-emerald-500 text-emerald-400';
+            alertBox.classList.remove('hidden');
+            document.getElementById('upload-form').reset();
+            document.getElementById('file-name-display').classList.add('hidden');
+            loadAdminChallenges();
+        } else {
+            alertBox.textContent = data.error || 'Gagal membuat challenge';
+            alertBox.className = 'mb-6 p-4 rounded-lg border bg-rose-500/20 border-rose-500 text-rose-400';
+            alertBox.classList.remove('hidden');
+        }
+    } catch(e) {
+        alertBox.textContent = 'Koneksi terputus saat proses build.';
+        alertBox.className = 'mb-6 p-4 rounded-lg border bg-rose-500/20 border-rose-500 text-rose-400';
+        alertBox.classList.remove('hidden');
+    }
+    
+    btn.disabled = false;
+    btn.innerHTML = `Upload & Build Image 🚀`;
+});
+
+document.addEventListener('DOMContentLoaded', loadAdminChallenges);
+</script>
+{% endblock %}

@@ -1,0 +1,71 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="max-w-md mx-auto mt-20">
+    <div class="glass rounded-xl p-8 shadow-2xl border-t-4 border-rose-500">
+        <div class="text-center mb-8">
+            <h2 class="text-3xl font-bold text-rose-500 tracking-wider">RESTRICTED AREA</h2>
+            <p class="text-gray-400 mt-2">Administrator Access Only</p>
+        </div>
+        
+        <div id="error-msg" class="hidden mb-4 p-3 bg-red-500/20 border border-red-500 rounded text-red-400 text-sm text-center"></div>
+
+        <form id="admin-login-form" class="space-y-6">
+            <div>
+                <label class="block text-sm font-medium text-gray-300 mb-2" for="username">Admin ID</label>
+                <input class="w-full bg-slate-900/50 text-white rounded-lg px-4 py-3 border border-slate-700 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500 transition" 
+                       id="username" type="text" placeholder="admin" required>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-300 mb-2" for="password">Passphrase</label>
+                <input class="w-full bg-slate-900/50 text-white rounded-lg px-4 py-3 border border-slate-700 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500 transition" 
+                       id="password" type="password" placeholder="••••••••" required>
+            </div>
+            <button class="w-full bg-rose-600 hover:bg-rose-500 text-white font-bold py-3 px-4 rounded-lg transition duration-200 shadow-lg shadow-rose-500/20" 
+                    type="submit" id="submit-btn">
+                AUTHENTICATE
+            </button>
+        </form>
+    </div>
+</div>
+
+<script>
+document.getElementById('admin-login-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = document.getElementById('submit-btn');
+    const err = document.getElementById('error-msg');
+    
+    btn.disabled = true;
+    btn.textContent = 'VERIFYING...';
+    err.classList.add('hidden');
+    
+    try {
+        const res = await fetch('/api/v2/admin/login', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                username: document.getElementById('username').value,
+                password: document.getElementById('password').value
+            })
+        });
+        
+        const data = await res.json();
+        
+        if(res.ok && data.token) {
+            localStorage.setItem('admin_token', data.token);
+            window.location.href = '/admin';
+        } else {
+            err.textContent = data.error || 'Access Denied';
+            err.classList.remove('hidden');
+            btn.disabled = false;
+            btn.textContent = 'AUTHENTICATE';
+        }
+    } catch(error) {
+        err.textContent = 'Connection error';
+        err.classList.remove('hidden');
+        btn.disabled = false;
+        btn.textContent = 'AUTHENTICATE';
+    }
+});
+</script>
+{% endblock %}

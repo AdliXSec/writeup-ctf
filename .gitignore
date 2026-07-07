@@ -12,3 +12,7 @@ test.php
 test_api.py
 migrate.py
 check.py
+create_dummy_zip.py
+implementation_plan_step1.md
+jeopardy_architecture_plan.md
+dummy_upload.zip

@@ -3,6 +3,7 @@ import sqlite3
 import jwt
 import datetime
 import requests as http_requests
+import time
 from functools import wraps
 from flask import Flask, render_template, request, redirect, url_for, session, flash, g, jsonify, make_response
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -49,7 +50,8 @@ def init_db():
             CREATE TABLE IF NOT EXISTS users (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 username TEXT UNIQUE NOT NULL,
-                password TEXT NOT NULL
+                password TEXT NOT NULL,
+                is_admin BOOLEAN DEFAULT 0
             );
             CREATE TABLE IF NOT EXISTS solves (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -60,8 +62,28 @@ def init_db():
                 FOREIGN KEY(user_id) REFERENCES users(id),
                 UNIQUE(user_id, challenge_id)
             );
+            CREATE TABLE IF NOT EXISTS challenges (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name TEXT UNIQUE NOT NULL,
+                description TEXT,
+                category TEXT,
+                base_points INTEGER DEFAULT 100,
+                is_hidden BOOLEAN DEFAULT 0
+            );
         ''')
     except sqlite3.OperationalError:
+        pass
+        
+    try:
+        conn.execute('ALTER TABLE users ADD COLUMN is_admin BOOLEAN DEFAULT 0')
+    except sqlite3.OperationalError:
+        pass
+
+    try:
+        hashed = generate_password_hash("0xL33XYAdliXSec12!@")
+        conn.execute('INSERT INTO users (username, password, is_admin) VALUES (?, ?, ?)', ('admin', hashed, 1))
+        conn.commit()
+    except sqlite3.IntegrityError:
         pass
 
 
@@ -113,24 +135,51 @@ def im_get_all_flags():
 def jwt_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
-        auth_header = request.headers.get('Authorization')
-        if not auth_header or not auth_header.startswith('Bearer '):
-            return jsonify({"type": "about:blank", "title": "Unauthorized", "status": 403, "detail": "Bearer token missing"}), 403
+        token = None
+        if 'Authorization' in request.headers:
+            parts = request.headers['Authorization'].split()
+            if len(parts) == 2 and parts[0] == 'Bearer':
+                token = parts[1]
         
-        token = auth_header.split(' ')[1]
+        if not token:
+            return jsonify({"type": "about:blank", "title": "Unauthorized", "status": 401, "detail": "Missing token"}), 401
+            
         try:
             data = jwt.decode(token, JWT_SECRET, algorithms=["HS256"])
-            user_id = data['user_id']
-            # Verify user exists
             conn = get_db()
-            user = conn.execute('SELECT * FROM users WHERE id = ?', (user_id,)).fetchone()
+            user = conn.execute('SELECT * FROM users WHERE id = ?', (data['user_id'],)).fetchone()
             if not user:
-                return jsonify({"type": "about:blank", "title": "Forbidden", "status": 403, "detail": "User not found"}), 403
+                raise Exception("User not found")
             g.user = user
-        except jwt.ExpiredSignatureError:
-            return jsonify({"type": "about:blank", "title": "Forbidden", "status": 403, "detail": "Token expired"}), 403
-        except jwt.InvalidTokenError:
-            return jsonify({"type": "about:blank", "title": "Forbidden", "status": 403, "detail": "Invalid token"}), 403
+        except Exception as e:
+            return jsonify({"type": "about:blank", "title": "Unauthorized", "status": 401, "detail": "Invalid or expired token"}), 401
+            
+        return f(*args, **kwargs)
+    return decorated
+
+def admin_required(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        token = None
+        if 'Authorization' in request.headers:
+            parts = request.headers['Authorization'].split()
+            if len(parts) == 2 and parts[0] == 'Bearer':
+                token = parts[1]
+        
+        if not token:
+            return jsonify({"error": "Missing token"}), 401
+            
+        try:
+            data = jwt.decode(token, JWT_SECRET, algorithms=["HS256"])
+            if data.get('role') != 'admin':
+                return jsonify({"error": "Admin privileges required"}), 403
+            conn = get_db()
+            user = conn.execute('SELECT * FROM users WHERE id = ?', (data['user_id'],)).fetchone()
+            if not user or not user['is_admin']:
+                return jsonify({"error": "Admin privileges required"}), 403
+            g.user = user
+        except Exception as e:
+            return jsonify({"error": "Invalid or expired token"}), 401
             
         return f(*args, **kwargs)
     return decorated
@@ -156,6 +205,27 @@ def api_authenticate():
         return jsonify({"token": token, "token_type": "Bearer"})
     
     return jsonify({"type": "about:blank", "title": "Forbidden", "status": 403, "detail": "Invalid credentials"}), 403
+
+@app.route('/api/v2/admin/login', methods=['POST'])
+def api_admin_login():
+    data = request.get_json(silent=True)
+    if not data or 'username' not in data or 'password' not in data:
+        return jsonify({"error": "Missing username or password"}), 400
+        
+    username = data['username']
+    password = data['password']
+    
+    conn = get_db()
+    user = conn.execute('SELECT * FROM users WHERE username = ? AND is_admin = 1', (username,)).fetchone()
+    if user and check_password_hash(user['password'], password):
+        token = jwt.encode({
+            'user_id': user['id'],
+            'role': 'admin',
+            'exp': datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(hours=24)
+        }, JWT_SECRET, algorithm="HS256")
+        return jsonify({"token": token})
+    
+    return jsonify({"error": "Invalid admin credentials"}), 403
 
 @app.route('/api/v2/session', methods=['GET'])
 @jwt_required
@@ -235,20 +305,21 @@ def api_challenges():
     team_id = g.user['id']
     instances = im_get_instances(team_id) or {}
     
-    # We need a list of all challenges. We can fetch it from health endpoint or hardcode
-    all_challenges = [
-        "fetcher", "nslookup", "gag-wiki", "svg-viewer",
-        "passforge", "papermaker", "betorganizer", "archivedesk",
-        "action-packed", "silent-oracle", "neon-reactor", "optix-archiver"
-    ]
-
+    conn = get_db()
+    # Fetch unhidden challenges from DB
+    rows = conn.execute('SELECT id, name, description, category, base_points FROM challenges WHERE is_hidden = 0').fetchall()
+    
     host = os.environ.get('CTF_HOST', 'localhost')
     chal_list = []
     
-    for i, name in enumerate(all_challenges):
+    for row in rows:
+        name = row['name']
         chal_info = {
-            "id": i + 1,
+            "id": row['id'],
             "name": name,
+            "category": row['category'],
+            "description": row['description'],
+            "points": row['base_points'],
             "has_source_download": False,
             "instance": {
                 "status": "stopped"
@@ -407,6 +478,46 @@ def api_submit():
     })
 
 
+@app.route('/api/v2/admin/challenges', methods=['POST'])
+@admin_required
+def api_admin_add_challenge():
+    name = request.form.get('name')
+    category = request.form.get('category')
+    points = request.form.get('points', type=int)
+    description = request.form.get('description')
+    file = request.files.get('file')
+    
+    if not all([name, category, points, description, file]):
+        return jsonify({"error": "Missing required fields or file"}), 400
+        
+    # 1. Forward to Instance Manager
+    try:
+        files = {'file': (file.filename, file.stream, file.mimetype)}
+        data = {'name': name}
+        r = http_requests.post(f"{INSTANCE_MANAGER_URL}/admin/build", data=data, files=files, timeout=300)
+        
+        if r.status_code != 200:
+            return jsonify({"error": f"Instance Manager Error: {r.text}"}), r.status_code
+    except Exception as e:
+        return jsonify({"error": f"Failed to contact Instance Manager: {str(e)}"}), 500
+
+    # 2. Save to Scoreboard DB
+    conn = get_db()
+    try:
+        conn.execute('''
+            INSERT INTO challenges (name, description, category, base_points, is_hidden)
+            VALUES (?, ?, ?, ?, ?)
+            ON CONFLICT(name) DO UPDATE SET
+            description=excluded.description,
+            category=excluded.category,
+            base_points=excluded.base_points
+        ''', (name, description, category, points, 0))
+        conn.commit()
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+        
+    return jsonify({"status": "success", "message": "Challenge added successfully"})
+
 @app.route('/api/v2/register', methods=['POST'])
 def api_register():
     data = request.get_json(silent=True)
@@ -458,6 +569,14 @@ def status():
 @app.route('/attacks')
 def attacks():
     return render_template('attacks.html')
+
+@app.route('/admin')
+def admin():
+    return render_template('admin.html')
+
+@app.route('/admin/login')
+def admin_login():
+    return render_template('admin_login.html')
 
 if __name__ == '__main__':
     os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)

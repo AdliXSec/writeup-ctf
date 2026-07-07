@@ -252,7 +252,7 @@ def api_instance_start():
         
     conn = get_db()
     chal = conn.execute('SELECT is_hidden FROM challenges WHERE name = ?', (chal_name,)).fetchone()
-    if not chal or chal['is_hidden']:
+    if not chal or (chal['is_hidden'] and not g.user.get('is_admin')):
         return jsonify({"error": "Challenge is disabled or not found"}), 403
         
     resp = http_requests.post(
@@ -311,8 +311,8 @@ def api_challenges():
     instances = im_get_instances(team_id) or {}
     
     conn = get_db()
-    # Fetch unhidden challenges from DB unless admin
-    if getattr(g, 'user', {}).get('is_admin'):
+    # Fetch all challenges for admins, only active ones for players
+    if g.user.get('is_admin'):
         rows = conn.execute('SELECT id, name, description, category, base_points, is_hidden FROM challenges').fetchall()
     else:
         rows = conn.execute('SELECT id, name, description, category, base_points, is_hidden FROM challenges WHERE is_hidden = 0').fetchall()
@@ -486,6 +486,25 @@ def api_submit():
         "rejected_count": rejected
     })
 
+# ── ADMIN ENDPOINTS ──
+
+@app.route('/api/v2/admin/challenges', methods=['GET'])
+@admin_required
+def api_admin_list_challenges():
+    conn = get_db()
+    rows = conn.execute('SELECT id, name, description, category, base_points, is_hidden FROM challenges').fetchall()
+    
+    chal_list = []
+    for row in rows:
+        chal_list.append({
+            "id": row['id'],
+            "name": row['name'],
+            "category": row['category'],
+            "description": row['description'],
+            "points": row['base_points'],
+            "is_hidden": bool(row['is_hidden'])
+        })
+    return jsonify(chal_list)
 
 @app.route('/api/v2/admin/challenges', methods=['POST'])
 @admin_required
@@ -521,7 +540,7 @@ def api_admin_add_challenge():
             description=excluded.description,
             category=excluded.category,
             base_points=excluded.base_points
-        ''', (name, description, category, points, 0))
+        ''', (name, description, category, points, 1))
         conn.commit()
     except Exception as e:
         return jsonify({"error": str(e)}), 500

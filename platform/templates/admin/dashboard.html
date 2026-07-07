@@ -123,7 +123,7 @@ fileInput.addEventListener('change', function(e) {
 
 async function loadAdminChallenges() {
     try {
-        const res = await fetch('/api/v2/challenges', {
+        const res = await fetch('/api/v2/admin/challenges', {
             headers: { 'Authorization': 'Bearer ' + adminToken }
         });
         

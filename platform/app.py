@@ -250,6 +250,11 @@ def api_instance_start():
     if not chal_name:
         return jsonify({"error": "challenge name required"}), 400
         
+    conn = get_db()
+    chal = conn.execute('SELECT is_hidden FROM challenges WHERE name = ?', (chal_name,)).fetchone()
+    if not chal or chal['is_hidden']:
+        return jsonify({"error": "Challenge is disabled or not found"}), 403
+        
     resp = http_requests.post(
         f"{INSTANCE_MANAGER_URL}/instances/start",
         json={"team_id": g.user['id'], "challenge": chal_name},
@@ -306,8 +311,11 @@ def api_challenges():
     instances = im_get_instances(team_id) or {}
     
     conn = get_db()
-    # Fetch unhidden challenges from DB
-    rows = conn.execute('SELECT id, name, description, category, base_points FROM challenges WHERE is_hidden = 0').fetchall()
+    # Fetch unhidden challenges from DB unless admin
+    if getattr(g, 'user', {}).get('is_admin'):
+        rows = conn.execute('SELECT id, name, description, category, base_points, is_hidden FROM challenges').fetchall()
+    else:
+        rows = conn.execute('SELECT id, name, description, category, base_points, is_hidden FROM challenges WHERE is_hidden = 0').fetchall()
     
     host = os.environ.get('CTF_HOST', 'localhost')
     chal_list = []
@@ -320,6 +328,7 @@ def api_challenges():
             "category": row['category'],
             "description": row['description'],
             "points": row['base_points'],
+            "is_hidden": bool(row['is_hidden']),
             "has_source_download": False,
             "instance": {
                 "status": "stopped"
@@ -487,19 +496,20 @@ def api_admin_add_challenge():
     description = request.form.get('description')
     file = request.files.get('file')
     
-    if not all([name, category, points, description, file]):
-        return jsonify({"error": "Missing required fields or file"}), 400
+    if not all([name, category, points, description]):
+        return jsonify({"error": "Missing required fields"}), 400
         
-    # 1. Forward to Instance Manager
-    try:
-        files = {'file': (file.filename, file.stream, file.mimetype)}
-        data = {'name': name}
-        r = http_requests.post(f"{INSTANCE_MANAGER_URL}/admin/build", data=data, files=files, timeout=300)
-        
-        if r.status_code != 200:
-            return jsonify({"error": f"Instance Manager Error: {r.text}"}), r.status_code
-    except Exception as e:
-        return jsonify({"error": f"Failed to contact Instance Manager: {str(e)}"}), 500
+    # 1. Forward to Instance Manager (if file is provided)
+    if file:
+        try:
+            files = {'file': (file.filename, file.stream, file.mimetype)}
+            data = {'name': name}
+            r = http_requests.post(f"{INSTANCE_MANAGER_URL}/admin/build", data=data, files=files, timeout=300)
+            
+            if r.status_code != 200:
+                return jsonify({"error": f"Instance Manager Error: {r.text}"}), r.status_code
+        except Exception as e:
+            return jsonify({"error": f"Failed to contact Instance Manager: {str(e)}"}), 500
 
     # 2. Save to Scoreboard DB
     conn = get_db()
@@ -516,8 +526,39 @@ def api_admin_add_challenge():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
         
-    return jsonify({"status": "success", "message": "Challenge added successfully"})
+    return jsonify({"status": "success", "message": "Challenge saved successfully"})
 
+@app.route('/api/v2/admin/challenges/<name>', methods=['DELETE'])
+@admin_required
+def api_admin_delete_challenge(name):
+    # 1. Delete from Instance Manager
+    try:
+        r = http_requests.delete(f"{INSTANCE_MANAGER_URL}/admin/build/{name}", timeout=60)
+        if r.status_code != 200:
+            return jsonify({"error": f"Instance Manager Error: {r.text}"}), r.status_code
+    except Exception as e:
+        return jsonify({"error": f"Failed to contact Instance Manager: {str(e)}"}), 500
+        
+    # 2. Delete from Scoreboard DB
+    conn = get_db()
+    try:
+        conn.execute("DELETE FROM challenges WHERE name = ?", (name,))
+        conn.commit()
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+        
+    return jsonify({"status": "success", "message": "Challenge deleted successfully"})
+
+@app.route('/api/v2/admin/challenges/<name>/toggle', methods=['PUT'])
+@admin_required
+def api_admin_toggle_challenge(name):
+    conn = get_db()
+    try:
+        conn.execute("UPDATE challenges SET is_hidden = CASE WHEN is_hidden = 1 THEN 0 ELSE 1 END WHERE name = ?", (name,))
+        conn.commit()
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    return jsonify({"status": "success", "message": f"Challenge {name} visibility toggled"})
 @app.route('/api/v2/register', methods=['POST'])
 def api_register():
     data = request.get_json(silent=True)

@@ -15,7 +15,10 @@
         <!-- Upload Form Column -->
         <div class="lg:col-span-1">
             <div class="glass rounded-xl p-6 shadow-lg border-t-2 border-sky-500">
-                <h2 class="text-2xl font-bold text-white mb-6">Tambahkan Tantangan Baru</h2>
+                <div class="flex justify-between items-center mb-6">
+                    <h2 id="form-title" class="text-2xl font-bold text-white">Tambahkan Tantangan Baru</h2>
+                    <button type="button" id="cancel-edit-btn" onclick="resetForm()" class="hidden text-sm text-gray-400 hover:text-white transition">Batal Edit</button>
+                </div>
                 
                 <form id="upload-form" class="space-y-4">
                     <div>
@@ -142,13 +145,21 @@ async function loadAdminChallenges() {
             let html = '';
             data.forEach(chal => {
                 html += `
-                    <tr class="border-b border-slate-700/50 hover:bg-slate-800/30 transition">
+                    <tr class="border-b border-slate-700/50 hover:bg-slate-800/30 transition ${chal.is_hidden ? 'opacity-50' : ''}">
                         <td class="py-3 px-4 text-gray-400">#${chal.id}</td>
-                        <td class="py-3 px-4 font-bold text-white">${chal.name}</td>
+                        <td class="py-3 px-4 font-bold text-white">
+                            ${chal.name}
+                            ${chal.is_hidden ? '<span class="ml-2 text-[10px] uppercase font-bold tracking-wider bg-rose-500/20 text-rose-400 px-2 py-0.5 rounded">Disabled</span>' : ''}
+                        </td>
                         <td class="py-3 px-4 text-sky-400 text-sm">${chal.category}</td>
                         <td class="py-3 px-4 text-fuchsia-400 font-mono">${chal.points} pts</td>
-                        <td class="py-3 px-4 text-right">
-                            <button class="text-xs bg-rose-500/20 hover:bg-rose-500/40 text-rose-400 px-3 py-1.5 rounded transition" onclick="alert('Fitur Delete akan diimplementasi di langkah selanjutnya!')">Delete</button>
+                        <td class="py-3 px-4 text-right flex justify-end items-center gap-3">
+                            <label class="inline-flex items-center cursor-pointer" title="Enable / Disable Challenge">
+                                <input type="checkbox" class="sr-only peer" ${chal.is_hidden ? '' : 'checked'} onchange="toggleChallenge('${chal.name}')">
+                                <div class="relative w-9 h-5 bg-gray-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500"></div>
+                            </label>
+                            <button class="text-xs bg-sky-500/20 hover:bg-sky-500/40 text-sky-400 px-3 py-1.5 rounded transition" onclick="editChallenge(this.dataset.chal)" data-chal='${encodeURIComponent(JSON.stringify(chal))}'>Edit</button>
+                            <button class="text-xs bg-rose-500/20 hover:bg-rose-500/40 text-rose-400 px-3 py-1.5 rounded transition" onclick="deleteChallenge('${chal.name}')">Delete</button>
                         </td>
                     </tr>
                 `;
@@ -160,13 +171,76 @@ async function loadAdminChallenges() {
     }
 }
 
+let isEditMode = false;
+
+function resetForm() {
+    isEditMode = false;
+    document.getElementById('upload-form').reset();
+    document.getElementById('chal-name').readOnly = false;
+    document.getElementById('submit-btn').innerHTML = `Upload & Build Image 🚀`;
+    document.getElementById('form-title').innerText = `Tambahkan Tantangan Baru`;
+    document.getElementById('file-name-display').classList.add('hidden');
+    document.getElementById('cancel-edit-btn').classList.add('hidden');
+}
+
+function editChallenge(chalEncoded) {
+    const chal = JSON.parse(decodeURIComponent(chalEncoded));
+    isEditMode = true;
+    
+    document.getElementById('chal-name').value = chal.name;
+    document.getElementById('chal-name').readOnly = true; // Prevent changing name
+    document.getElementById('chal-category').value = chal.category;
+    document.getElementById('chal-points').value = chal.points;
+    document.getElementById('chal-desc').value = chal.description || '';
+    
+    document.getElementById('submit-btn').innerHTML = `Update Challenge Metadata 📝`;
+    document.getElementById('form-title').innerText = `Edit: ${chal.name}`;
+    document.getElementById('cancel-edit-btn').classList.remove('hidden');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+async function deleteChallenge(name) {
+    if(!confirm(`PERINGATAN!\n\nMenghapus challenge '${name}' akan mematikan semua instance yang sedang berjalan, menghapus Docker image-nya, dan memusnahkannya dari database secara permanen.\n\nLanjutkan?`)) return;
+    
+    try {
+        const res = await fetch(`/api/v2/admin/challenges/${name}`, {
+            method: 'DELETE',
+            headers: { 'Authorization': 'Bearer ' + adminToken }
+        });
+        const data = await res.json();
+        if(res.ok) {
+            alert('Sukses menghapus challenge.');
+            loadAdminChallenges();
+        } else {
+            alert('Gagal: ' + (data.error || 'Unknown error'));
+        }
+    } catch(e) {
+        alert('Gagal menghubungi server.');
+    }
+}
+
+async function toggleChallenge(name) {
+    try {
+        const res = await fetch(`/api/v2/admin/challenges/${name}/toggle`, {
+            method: 'PUT',
+            headers: { 'Authorization': 'Bearer ' + adminToken }
+        });
+        if(!res.ok) {
+            alert('Gagal mengubah status challenge');
+        }
+        loadAdminChallenges();
+    } catch(e) {
+        alert('Gagal menghubungi server.');
+    }
+}
+
 document.getElementById('upload-form').addEventListener('submit', async function(e) {
     e.preventDefault();
     const btn = document.getElementById('submit-btn');
     const alertBox = document.getElementById('admin-alert');
     
     const file = document.getElementById('chal-zip').files[0];
-    if(!file) {
+    if(!isEditMode && !file) {
         alertBox.textContent = 'Harap pilih file ZIP terlebih dahulu!';
         alertBox.className = 'mb-6 p-4 rounded-lg border bg-rose-500/20 border-rose-500 text-rose-400';
         alertBox.classList.remove('hidden');
@@ -178,10 +252,12 @@ document.getElementById('upload-form').addEventListener('submit', async function
     formData.append('category', document.getElementById('chal-category').value);
     formData.append('points', document.getElementById('chal-points').value);
     formData.append('description', document.getElementById('chal-desc').value);
-    formData.append('file', file);
+    if(file) {
+        formData.append('file', file);
+    }
     
     btn.disabled = true;
-    btn.innerHTML = `<span class="animate-pulse">Building Docker Image... (Jangan ditutup) ⏳</span>`;
+    btn.innerHTML = file ? `<span class="animate-pulse">Building Docker Image... (Jangan ditutup) ⏳</span>` : `<span class="animate-pulse">Updating...</span>`;
     alertBox.classList.add('hidden');
     
     try {
@@ -193,25 +269,24 @@ document.getElementById('upload-form').addEventListener('submit', async function
         
         const data = await res.json();
         if(res.ok) {
-            alertBox.textContent = 'Sukses! Challenge berhasil dibuat dan Docker Image siap dijalankan.';
+            alertBox.textContent = file ? 'Sukses! Challenge berhasil dibuat dan Docker Image siap dijalankan.' : 'Sukses! Metadata challenge berhasil diperbarui.';
             alertBox.className = 'mb-6 p-4 rounded-lg border bg-emerald-500/20 border-emerald-500 text-emerald-400';
             alertBox.classList.remove('hidden');
-            document.getElementById('upload-form').reset();
-            document.getElementById('file-name-display').classList.add('hidden');
+            resetForm();
             loadAdminChallenges();
         } else {
-            alertBox.textContent = data.error || 'Gagal membuat challenge';
+            alertBox.textContent = data.error || 'Gagal menyimpan challenge';
             alertBox.className = 'mb-6 p-4 rounded-lg border bg-rose-500/20 border-rose-500 text-rose-400';
             alertBox.classList.remove('hidden');
         }
     } catch(e) {
-        alertBox.textContent = 'Koneksi terputus saat proses build.';
+        alertBox.textContent = 'Koneksi terputus saat proses komunikasi dengan server.';
         alertBox.className = 'mb-6 p-4 rounded-lg border bg-rose-500/20 border-rose-500 text-rose-400';
         alertBox.classList.remove('hidden');
     }
     
     btn.disabled = false;
-    btn.innerHTML = `Upload & Build Image 🚀`;
+    btn.innerHTML = isEditMode ? `Update Challenge Metadata 📝` : `Upload & Build Image 🚀`;
 });
 
 document.addEventListener('DOMContentLoaded', loadAdminChallenges);

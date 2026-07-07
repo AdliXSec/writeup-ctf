@@ -16,3 +16,6 @@ create_dummy_zip.py
 implementation_plan_step1.md
 jeopardy_architecture_plan.md
 dummy_upload.zip
+lfi-challenge/
+create_lfi_zip.py
+lfi-challenge.zip

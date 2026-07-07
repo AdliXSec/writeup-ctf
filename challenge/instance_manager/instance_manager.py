@@ -655,6 +655,36 @@ def api_admin_build():
         except: pass
         return jsonify({"error": str(e)}), 500
 
+@app.route("/admin/build/<name>", methods=["DELETE"])
+def api_admin_delete_build(name):
+    """Admin endpoint to completely delete a challenge (instances, image, and config)."""
+    conn = get_db()
+    try:
+        # 1. Stop all active instances of this challenge
+        rows = conn.execute("SELECT team_id FROM instances WHERE challenge = ?", (name,)).fetchall()
+        for r in rows:
+            stop_challenge_instance(r["team_id"], name)
+            
+        # 2. Delete the Docker image
+        client = get_docker()
+        try:
+            client.images.remove(f"ctf-{name}", force=True)
+            log.info(f"Deleted image ctf-{name}")
+        except docker.errors.ImageNotFound:
+            pass
+        except Exception as e:
+            log.warning(f"Error deleting image ctf-{name}: {str(e)}")
+            
+        # 3. Delete from challenge_configs table
+        conn.execute("DELETE FROM challenge_configs WHERE name = ?", (name,))
+        conn.commit()
+        return jsonify({"status": "success", "message": f"Successfully deleted challenge {name}"})
+    except Exception as e:
+        log.error(f"Failed to delete challenge {name}: {str(e)}")
+        return jsonify({"error": str(e)}), 500
+    finally:
+        conn.close()
+
 # ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------

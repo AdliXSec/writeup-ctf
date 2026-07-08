@@ -9,6 +9,15 @@
 
     <!-- Alert Container -->
     <div id="admin-alert" class="hidden mb-6 p-4 rounded-lg border"></div>
+    
+    <!-- System Health Stats -->
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-6 mb-8" id="admin-stats-container">
+        <!-- Stats will be loaded here -->
+        <div class="glass p-5 rounded-xl border border-slate-700 text-center animate-pulse"><div class="h-8 bg-slate-700 rounded w-1/2 mx-auto mb-2"></div><div class="h-4 bg-slate-700 rounded w-3/4 mx-auto"></div></div>
+        <div class="glass p-5 rounded-xl border border-slate-700 text-center animate-pulse"><div class="h-8 bg-slate-700 rounded w-1/2 mx-auto mb-2"></div><div class="h-4 bg-slate-700 rounded w-3/4 mx-auto"></div></div>
+        <div class="glass p-5 rounded-xl border border-slate-700 text-center animate-pulse"><div class="h-8 bg-slate-700 rounded w-1/2 mx-auto mb-2"></div><div class="h-4 bg-slate-700 rounded w-3/4 mx-auto"></div></div>
+        <div class="glass p-5 rounded-xl border border-slate-700 text-center animate-pulse"><div class="h-8 bg-slate-700 rounded w-1/2 mx-auto mb-2"></div><div class="h-4 bg-slate-700 rounded w-3/4 mx-auto"></div></div>
+    </div>
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
         
@@ -120,6 +129,30 @@
                 </thead>
                 <tbody id="admin-instances-table">
                     <tr><td colspan="5" class="py-6 text-center text-gray-500">Memuat instance...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    
+    <!-- User Management Section -->
+    <div class="mt-8 glass rounded-xl p-6 shadow-lg border-t-2 border-fuchsia-500">
+        <div class="flex justify-between items-center mb-6">
+            <h2 class="text-2xl font-bold text-white">Manajemen Pemain (Sistem Banned)</h2>
+            <button onclick="loadAdminUsers()" class="text-xs bg-fuchsia-500/20 hover:bg-fuchsia-500/40 text-fuchsia-400 px-3 py-1.5 rounded transition">Refresh</button>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+                <thead>
+                    <tr class="bg-slate-800/50 border-b border-slate-700">
+                        <th class="py-3 px-4 font-semibold text-gray-300 w-16">ID</th>
+                        <th class="py-3 px-4 font-semibold text-gray-300">Username</th>
+                        <th class="py-3 px-4 font-semibold text-gray-300">Role</th>
+                        <th class="py-3 px-4 font-semibold text-gray-300">Status</th>
+                        <th class="py-3 px-4 font-semibold text-gray-300 text-right">Aksi</th>
+                    </tr>
+                </thead>
+                <tbody id="admin-users-table">
+                    <tr><td colspan="5" class="py-6 text-center text-gray-500">Memuat pemain...</td></tr>
                 </tbody>
             </table>
         </div>
@@ -374,10 +407,105 @@ async function killInstance(team_id, challenge) {
     }
 }
 
+async function loadAdminStats() {
+    try {
+        const res = await fetch('/api/v2/admin/stats', { headers: { 'Authorization': 'Bearer ' + adminToken } });
+        if(res.ok) {
+            const data = await res.json();
+            const container = document.getElementById('admin-stats-container');
+            container.innerHTML = `
+                <div class="glass p-5 rounded-xl border border-slate-700 text-center">
+                    <div class="text-3xl font-bold text-sky-400 mb-1">${data.users.total}</div>
+                    <div class="text-xs text-gray-400 uppercase tracking-wider font-semibold">Total Pemain</div>
+                </div>
+                <div class="glass p-5 rounded-xl border border-slate-700 text-center">
+                    <div class="text-3xl font-bold text-rose-500 mb-1">${data.users.banned}</div>
+                    <div class="text-xs text-gray-400 uppercase tracking-wider font-semibold">Banned</div>
+                </div>
+                <div class="glass p-5 rounded-xl border border-slate-700 text-center">
+                    <div class="text-3xl font-bold text-emerald-400 mb-1">${data.instance_manager.active_instances || 0}</div>
+                    <div class="text-xs text-gray-400 uppercase tracking-wider font-semibold">Instansi Aktif</div>
+                </div>
+                <div class="glass p-5 rounded-xl border border-slate-700 text-center">
+                    <div class="text-3xl font-bold text-fuchsia-400 mb-1">${data.solves}</div>
+                    <div class="text-xs text-gray-400 uppercase tracking-wider font-semibold">Total Solves</div>
+                </div>
+            `;
+        }
+    } catch(e) { console.error(e); }
+}
+
+async function loadAdminUsers() {
+    try {
+        const res = await fetch('/api/v2/admin/users', { headers: { 'Authorization': 'Bearer ' + adminToken } });
+        if(res.ok) {
+            const data = await res.json();
+            const tbody = document.getElementById('admin-users-table');
+            if(data.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" class="py-6 text-center text-gray-500">Belum ada pemain terdaftar.</td></tr>`;
+                return;
+            }
+            let html = '';
+            data.forEach(user => {
+                const rowClass = user.is_banned ? 'bg-rose-900/20 opacity-75' : 'hover:bg-slate-800/30';
+                const statusBadge = user.is_banned 
+                    ? `<span class="bg-rose-500/20 text-rose-400 px-2 py-0.5 rounded text-xs font-bold uppercase">Banned</span>`
+                    : `<span class="bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded text-xs font-bold uppercase">Active</span>`;
+                const roleBadge = user.is_admin
+                    ? `<span class="text-sky-400 text-xs font-bold uppercase">Admin</span>`
+                    : `<span class="text-gray-400 text-xs uppercase">Player</span>`;
+                
+                html += `
+                    <tr class="border-b border-slate-700/50 transition ${rowClass}">
+                        <td class="py-3 px-4 text-gray-400">${user.id}</td>
+                        <td class="py-3 px-4 font-bold text-white">${user.username}</td>
+                        <td class="py-3 px-4">${roleBadge}</td>
+                        <td class="py-3 px-4">${statusBadge}</td>
+                        <td class="py-3 px-4 text-right">
+                            ${!user.is_admin ? `
+                                <button class="text-xs ${user.is_banned ? 'bg-emerald-500/20 hover:bg-emerald-500/40 text-emerald-400' : 'bg-rose-500/20 hover:bg-rose-500/40 text-rose-400'} px-3 py-1.5 rounded transition" onclick="toggleBan(${user.id}, ${user.is_banned})">
+                                    ${user.is_banned ? 'Unban' : 'Ban'}
+                                </button>
+                            ` : ''}
+                        </td>
+                    </tr>
+                `;
+            });
+            tbody.innerHTML = html;
+        }
+    } catch(e) { console.error(e); }
+}
+
+async function toggleBan(userId, currentStatus) {
+    const actionStr = currentStatus ? "Membuka BAN (Unban)" : "Menge-BAN";
+    if(!confirm(`PERINGATAN!\n\n${actionStr} pemain ID ${userId}?\nJika di-ban, semua instansi pemain ini akan di-kill paksa.\n\nLanjutkan?`)) return;
+    
+    try {
+        const res = await fetch(`/api/v2/admin/users/${userId}/ban`, {
+            method: 'PUT',
+            headers: { 'Authorization': 'Bearer ' + adminToken }
+        });
+        if(res.ok) {
+            loadAdminUsers();
+            loadAdminStats();
+            loadAdminInstances();
+        } else {
+            const data = await res.json();
+            alert('Gagal: ' + (data.error || 'Unknown error'));
+        }
+    } catch(e) { alert('Gagal menghubungi server.'); }
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     loadAdminChallenges();
     loadAdminInstances();
-    instancesTimer = setInterval(loadAdminInstances, 10000);
+    loadAdminStats();
+    loadAdminUsers();
+    instancesTimer = setInterval(() => {
+        loadAdminInstances();
+        loadAdminStats();
+        loadAdminUsers();
+    }, 10000);
 });
 </script>
 {% endblock %}

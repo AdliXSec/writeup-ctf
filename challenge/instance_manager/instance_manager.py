@@ -558,6 +558,40 @@ def api_get_all_instances():
     return jsonify({"instances": res})
 
 
+@app.route("/stats", methods=["GET"])
+def api_stats():
+    """Get system and docker stats."""
+    client = get_docker()
+    try:
+        info = client.info()
+    except Exception:
+        info = {}
+    conn = get_db()
+    active_instances = conn.execute("SELECT COUNT(*) FROM instances").fetchone()[0]
+    conn.close()
+    return jsonify({
+        "docker_containers_running": info.get("ContainersRunning", 0),
+        "docker_images": info.get("Images", 0),
+        "operating_system": info.get("OperatingSystem", "Unknown"),
+        "active_instances": active_instances
+    })
+
+@app.route("/instances/<int:team_id>/stop_all", methods=["POST"])
+def api_stop_all(team_id):
+    """Stop all instances for a specific team (used when banning)."""
+    conn = get_db()
+    rows = conn.execute("SELECT challenge FROM instances WHERE team_id = ?", (team_id,)).fetchall()
+    conn.close()
+    
+    stopped = []
+    for r in rows:
+        ok, msg = stop_challenge_instance(team_id, r["challenge"])
+        if ok:
+            stopped.append(r["challenge"])
+            
+    return jsonify({"status": "success", "stopped_challenges": stopped})
+
+
 @app.route("/all-flags", methods=["GET"])
 def api_all_flags():
     """Return all flags keyed by team_id (used by platform for submit validation)."""

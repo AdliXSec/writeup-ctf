@@ -80,6 +80,11 @@ def init_db():
         pass
 
     try:
+        conn.execute('ALTER TABLE users ADD COLUMN is_banned BOOLEAN DEFAULT 0')
+    except sqlite3.OperationalError:
+        pass
+
+    try:
         hashed = generate_password_hash("0xL33XYAdliXSec12!@")
         conn.execute('INSERT INTO users (username, password, is_admin) VALUES (?, ?, ?)', ('admin', hashed, 1))
         conn.commit()
@@ -151,6 +156,8 @@ def jwt_required(f):
             if not user:
                 raise Exception("User not found")
             g.user = user
+            if g.user['is_banned']:
+                return jsonify({"type": "about:blank", "title": "Forbidden", "status": 403, "detail": "Your account has been banned."}), 403
         except Exception as e:
             return jsonify({"type": "about:blank", "title": "Unauthorized", "status": 401, "detail": "Invalid or expired token"}), 401
             
@@ -178,6 +185,8 @@ def admin_required(f):
             if not user or not user['is_admin']:
                 return jsonify({"error": "Admin privileges required"}), 403
             g.user = user
+            if g.user['is_banned']:
+                return jsonify({"error": "Admin account banned"}), 403
         except Exception as e:
             return jsonify({"error": "Invalid or expired token"}), 401
             
@@ -198,6 +207,8 @@ def api_authenticate():
     conn = get_db()
     user = conn.execute('SELECT * FROM users WHERE username = ?', (username,)).fetchone()
     if user and check_password_hash(user['password'], password):
+        if user['is_banned']:
+            return jsonify({"type": "about:blank", "title": "Forbidden", "status": 403, "detail": "Your account has been banned."}), 403
         token = jwt.encode({
             'user_id': user['id'],
             'exp': datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(hours=24)
@@ -547,6 +558,55 @@ def api_admin_stop_instance():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+
+@app.route('/api/v2/admin/stats', methods=['GET'])
+@admin_required
+def api_admin_stats():
+    conn = get_db()
+    total_users = conn.execute("SELECT COUNT(*) FROM users").fetchone()[0]
+    banned_users = conn.execute("SELECT COUNT(*) FROM users WHERE is_banned = 1").fetchone()[0]
+    total_solves = conn.execute("SELECT COUNT(*) FROM solves").fetchone()[0]
+    
+    try:
+        im_stats = http_requests.get(f"{INSTANCE_MANAGER_URL}/stats", timeout=5).json()
+    except Exception:
+        im_stats = {"error": "Unreachable", "active_instances": 0, "docker_containers_running": 0}
+        
+    return jsonify({
+        "users": {"total": total_users, "banned": banned_users},
+        "solves": total_solves,
+        "instance_manager": im_stats
+    })
+
+@app.route('/api/v2/admin/users', methods=['GET'])
+@admin_required
+def api_admin_users():
+    conn = get_db()
+    users = conn.execute("SELECT id, username, is_admin, is_banned FROM users").fetchall()
+    res = [{"id": u["id"], "username": u["username"], "is_admin": bool(u["is_admin"]), "is_banned": bool(u["is_banned"])} for u in users]
+    return jsonify(res)
+
+@app.route('/api/v2/admin/users/<int:user_id>/ban', methods=['PUT'])
+@admin_required
+def api_admin_toggle_ban(user_id):
+    conn = get_db()
+    user = conn.execute("SELECT is_banned, is_admin FROM users WHERE id = ?", (user_id,)).fetchone()
+    if not user:
+        return jsonify({"error": "User not found"}), 404
+    if user['is_admin']:
+        return jsonify({"error": "Cannot ban admin"}), 400
+        
+    new_status = 0 if user['is_banned'] else 1
+    conn.execute("UPDATE users SET is_banned = ? WHERE id = ?", (new_status, user_id))
+    conn.commit()
+    
+    if new_status == 1:
+        try:
+            http_requests.post(f"{INSTANCE_MANAGER_URL}/instances/{user_id}/stop_all", timeout=10)
+        except Exception:
+            pass
+            
+    return jsonify({"status": "success", "is_banned": new_status})
 
 @app.route('/api/v2/admin/challenges', methods=['POST'])
 @admin_required

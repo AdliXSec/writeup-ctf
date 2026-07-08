@@ -132,6 +132,7 @@ async function loadChallenges() {
                             </div>
                             <div class="text-right">
                                 <span class="text-fuchsia-400 font-bold">${chal.points} pts</span>
+                                ${chal.is_dynamic ? '<div class="text-[10px] font-bold text-fuchsia-400/70 mt-1 uppercase tracking-wider" title="Nilai tantangan ini menurun seiring banyaknya solver">📉 Dynamic</div>' : ''}
                             </div>
                         </div>
                         

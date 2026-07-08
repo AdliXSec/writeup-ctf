@@ -56,6 +56,11 @@
                         <label class="block text-sm font-medium text-gray-300 mb-1">Deskripsi Tantangan</label>
                         <textarea id="chal-desc" rows="3" class="w-full bg-slate-900/50 border border-slate-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-sky-500" placeholder="Jelaskan sedikit tentang tantangan ini..."></textarea>
                     </div>
+                    
+                    <div class="flex items-center mt-2 mb-4">
+                        <input type="checkbox" id="chal-dynamic" class="w-4 h-4 text-sky-600 bg-slate-900 border-slate-700 rounded focus:ring-sky-500 focus:ring-2">
+                        <label for="chal-dynamic" class="ml-2 text-sm font-medium text-gray-300">Gunakan Dynamic Scoring (Decaying Points)</label>
+                    </div>
 
                     <!-- File Upload Dropzone -->
                     <div class="mt-4">
@@ -207,6 +212,7 @@ async function loadAdminChallenges() {
                         <td class="py-3 px-4 font-bold text-white">
                             ${chal.name}
                             ${chal.is_hidden ? '<span class="ml-2 text-[10px] uppercase font-bold tracking-wider bg-rose-500/20 text-rose-400 px-2 py-0.5 rounded">Disabled</span>' : ''}
+                            ${chal.is_dynamic ? '<span class="ml-2 text-[10px] uppercase font-bold tracking-wider bg-fuchsia-500/20 text-fuchsia-400 px-2 py-0.5 rounded" title="Dynamic Scoring (Decaying Points)">📉 Dynamic</span>' : ''}
                         </td>
                         <td class="py-3 px-4 text-sky-400 text-sm">${chal.category}</td>
                         <td class="py-3 px-4 text-fuchsia-400 font-mono">${chal.points} pts</td>
@@ -234,6 +240,7 @@ function resetForm() {
     isEditMode = false;
     document.getElementById('upload-form').reset();
     document.getElementById('chal-name').readOnly = false;
+    document.getElementById('chal-dynamic').checked = false;
     document.getElementById('submit-btn').innerHTML = `Upload & Build Image 🚀`;
     document.getElementById('form-title').innerText = `Tambahkan Tantangan Baru`;
     document.getElementById('file-name-display').classList.add('hidden');
@@ -249,6 +256,7 @@ function editChallenge(chalEncoded) {
     document.getElementById('chal-category').value = chal.category;
     document.getElementById('chal-points').value = chal.points;
     document.getElementById('chal-desc').value = chal.description || '';
+    document.getElementById('chal-dynamic').checked = chal.is_dynamic || false;
     
     document.getElementById('submit-btn').innerHTML = `Update Challenge Metadata 📝`;
     document.getElementById('form-title').innerText = `Edit: ${chal.name}`;
@@ -309,6 +317,7 @@ document.getElementById('upload-form').addEventListener('submit', async function
     formData.append('category', document.getElementById('chal-category').value);
     formData.append('points', document.getElementById('chal-points').value);
     formData.append('description', document.getElementById('chal-desc').value);
+    formData.append('is_dynamic', document.getElementById('chal-dynamic').checked);
     if(file) {
         formData.append('file', file);
     }

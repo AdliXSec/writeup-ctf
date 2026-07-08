@@ -107,6 +107,19 @@ async function loadChallenges() {
             headers: { 'Authorization': 'Bearer ' + token }
         });
         
+        if(res.status === 403) {
+            const data = await res.json();
+            const container = document.getElementById('challenges-container');
+            container.innerHTML = `
+                <div class="col-span-full glass rounded-xl p-16 text-center border-dashed border-2 border-slate-600 mt-10">
+                    <span class="text-6xl block mb-6 animate-pulse">🔒</span>
+                    <h3 class="text-3xl font-bold text-gray-300">Tantangan Terkunci</h3>
+                    <p class="text-xl text-gray-500 mt-4">${escapeHTML(data.error || 'CTF Has Not Started Yet.')}</p>
+                </div>
+            `;
+            return;
+        }
+        
         if(res.ok) {
             const data = await res.json();
             const container = document.getElementById('challenges-container');

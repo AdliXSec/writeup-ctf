@@ -16,11 +16,12 @@ def api_authenticate():
     if not data or 'email' not in data or 'password' not in data:
         return jsonify({"type": "about:blank", "title": "Bad Request", "status": 400, "detail": "Missing email or password"}), 400
         
-    username = data['email']  # Mapping email to username
+    email = data['email']
     password = data['password']
     
     conn = get_db()
-    user = conn.execute('SELECT * FROM users WHERE username = ?', (username,)).fetchone()
+    # Try fetching by email ONLY
+    user = conn.execute('SELECT * FROM users WHERE email = ?', (email,)).fetchone()
     if user and check_password_hash(user['password'], password):
         if user['is_banned']:
             return jsonify({"type": "about:blank", "title": "Forbidden", "status": 403, "detail": "Your account has been banned."}), 403
@@ -42,7 +43,7 @@ def api_admin_login():
     password = data['password']
     
     conn = get_db()
-    user = conn.execute('SELECT * FROM users WHERE username = ? AND is_admin = 1', (username,)).fetchone()
+    user = conn.execute('SELECT * FROM users WHERE (username = ? OR email = ?) AND is_admin = 1', (username, username)).fetchone()
     if user and check_password_hash(user['password'], password):
         token = jwt.encode({
             'user_id': user['id'],
@@ -60,24 +61,71 @@ def api_session():
     return jsonify({
         "id": user['id'],
         "name": user['username'],
-        "email": user['username'] + "@ctf.local",
+        "email": user['email'] if 'email' in user.keys() else None,
+        "website": user['website'] if 'website' in user.keys() else None,
+        "affiliation": user['affiliation'] if 'affiliation' in user.keys() else None,
+        "country": user['country'] if 'country' in user.keys() else None,
         "role": "admin" if user['is_admin'] else "player"
     })
 
 @auth_bp.route('/register', methods=['POST'])
 def api_register():
     data = request.get_json(silent=True)
-    if not data or 'email' not in data or 'password' not in data:
-        return jsonify({"type": "about:blank", "title": "Bad Request", "status": 400, "detail": "Missing email or password"}), 400
+    if not data or 'username' not in data or 'email' not in data or 'password' not in data:
+        return jsonify({"type": "about:blank", "title": "Bad Request", "status": 400, "detail": "Missing username, email, or password"}), 400
         
-    username = data['email']
+    username = data['username']
+    email = data['email']
     password = data['password']
     hashed = generate_password_hash(password)
     
     conn = get_db()
+    
+    # Manually check uniqueness because SQLite ALTER TABLE doesn't support UNIQUE
+    existing = conn.execute('SELECT id FROM users WHERE username = ? OR email = ?', (username, email)).fetchone()
+    if existing:
+        return jsonify({"type": "about:blank", "title": "Conflict", "status": 409, "detail": "Username or Email already exists"}), 409
+
     try:
-        conn.execute('INSERT INTO users (username, password) VALUES (?, ?)', (username, hashed))
+        conn.execute('INSERT INTO users (username, email, password) VALUES (?, ?, ?)', (username, email, hashed))
         conn.commit()
         return jsonify({"status": "success", "detail": "User registered"}), 201
     except sqlite3.IntegrityError:
-        return jsonify({"type": "about:blank", "title": "Conflict", "status": 409, "detail": "Username already exists"}), 409
+        return jsonify({"type": "about:blank", "title": "Conflict", "status": 409, "detail": "Username or Email already exists"}), 409
+
+@auth_bp.route('/profile', methods=['PATCH'])
+@jwt_required
+def api_update_profile():
+    data = request.get_json(silent=True) or {}
+    
+    # Strictly filter allowed fields
+    email = data.get('email')
+    website = data.get('website')
+    affiliation = data.get('affiliation')
+    country = data.get('country')
+    username = data.get('username')
+    
+    conn = get_db()
+    
+    # Check if email is used by another account
+    if email:
+        existing = conn.execute('SELECT id FROM users WHERE email = ? AND id != ?', (email, g.user['id'])).fetchone()
+        if existing:
+            return jsonify({"type": "about:blank", "title": "Conflict", "status": 409, "detail": "Email already in use by another account"}), 409
+            
+    # Check if username is used by another account
+    if username:
+        existing_user = conn.execute('SELECT id FROM users WHERE username = ? AND id != ?', (username, g.user['id'])).fetchone()
+        if existing_user:
+            return jsonify({"type": "about:blank", "title": "Conflict", "status": 409, "detail": "Username already taken"}), 409
+            
+    try:
+        conn.execute('''
+            UPDATE users 
+            SET email = ?, website = ?, affiliation = ?, country = ?, username = COALESCE(?, username)
+            WHERE id = ?
+        ''', (email, website, affiliation, country, username, g.user['id']))
+        conn.commit()
+        return jsonify({"status": "success", "detail": "Profile updated"})
+    except sqlite3.IntegrityError:
+        return jsonify({"type": "about:blank", "title": "Conflict", "status": 409, "detail": "Email already in use by another account"}), 409

@@ -41,3 +41,7 @@ def admin():
 @views_bp.route('/admin/login')
 def admin_login():
     return render_template('admin/login.html')
+
+@views_bp.route('/notifications')
+def notifications():
+    return render_template('notifications.html')

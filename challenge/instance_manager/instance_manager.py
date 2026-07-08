@@ -1,12 +1,4 @@
 #!/usr/bin/env python3
-"""
-CTF Instance Manager — On-Demand PicoCTF Style
-
-Each team can run up to 3 challenge containers simultaneously.
-Containers have a lifetime of 10 minutes and can be extended by 5 minutes.
-Expired containers are automatically reaped.
-Port scheme: 10000 + (team_id * 100) + challenge_offset
-"""
 import os
 import secrets
 import sqlite3
@@ -590,6 +582,22 @@ def api_stop_all(team_id):
             stopped.append(r["challenge"])
             
     return jsonify({"status": "success", "stopped_challenges": stopped})
+
+@app.route("/instances/kill_all", methods=["POST"])
+def api_kill_all():
+    """Stop ALL running instances globally (used when pausing game)."""
+    conn = get_db()
+    rows = conn.execute("SELECT team_id, challenge FROM instances").fetchall()
+    conn.close()
+    
+    stopped = 0
+    for r in rows:
+        ok, msg = stop_challenge_instance(r["team_id"], r["challenge"])
+        if ok:
+            stopped += 1
+            
+    return jsonify({"status": "success", "killed_count": stopped})
+
 
 
 @app.route("/all-flags", methods=["GET"])

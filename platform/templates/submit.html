@@ -38,7 +38,7 @@ async function fetchMySolves() {
             const sessRes = await fetch('/api/v2/session', { headers: { 'Authorization': 'Bearer ' + token } });
             if(sessRes.ok) {
                 const sessData = await sessRes.json();
-                teamName = sessData.team_name;
+                teamName = sessData.name;
             }
         }
         

@@ -22,6 +22,10 @@ def init_db():
             CREATE TABLE IF NOT EXISTS users (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 username TEXT UNIQUE NOT NULL,
+                email TEXT,
+                website TEXT,
+                affiliation TEXT,
+                country TEXT,
                 password TEXT NOT NULL,
                 is_admin BOOLEAN DEFAULT 0,
                 is_banned BOOLEAN DEFAULT 0
@@ -44,9 +48,35 @@ def init_db():
                 is_hidden BOOLEAN DEFAULT 0,
                 is_dynamic BOOLEAN DEFAULT 0
             );
+            CREATE TABLE IF NOT EXISTS notifications (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                title TEXT NOT NULL,
+                message TEXT NOT NULL,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+            );
+            CREATE TABLE IF NOT EXISTS game_settings (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                start_time DATETIME,
+                end_time DATETIME,
+                is_paused BOOLEAN DEFAULT 0,
+                freeze_time DATETIME
+            );
         ''')
     except sqlite3.OperationalError:
         pass
+
+    # Migrations for new profile columns
+    migrations = [
+        "ALTER TABLE users ADD COLUMN email TEXT",
+        "ALTER TABLE users ADD COLUMN website TEXT",
+        "ALTER TABLE users ADD COLUMN affiliation TEXT",
+        "ALTER TABLE users ADD COLUMN country TEXT"
+    ]
+    for mig in migrations:
+        try:
+            conn.execute(mig)
+        except sqlite3.OperationalError:
+            pass
         
     try:
         hashed = generate_password_hash("0xL33XYAdliXSec12!@")
@@ -54,3 +84,12 @@ def init_db():
         conn.commit()
     except sqlite3.IntegrityError:
         pass
+        
+    try:
+        # Seed game settings if empty
+        settings = conn.execute('SELECT COUNT(*) FROM game_settings').fetchone()[0]
+        if settings == 0:
+            conn.execute('INSERT INTO game_settings (id, is_paused) VALUES (1, 0)')
+            conn.commit()
+    except Exception as e:
+        print("Settings seed error:", e)

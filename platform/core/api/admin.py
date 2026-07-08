@@ -11,7 +11,7 @@ admin_bp = Blueprint('admin_api', __name__, url_prefix='/api/v2/admin')
 @admin_required
 def api_admin_instances():
     try:
-        resp = http_requests.get(f"{Config.INSTANCE_MANAGER_URL}/admin/instances", timeout=10)
+        resp = http_requests.get(f"{Config.INSTANCE_MANAGER_URL}/instances", timeout=10)
         im_data = resp.json()
     except Exception as e:
         return jsonify({"error": str(e)}), 500
@@ -20,11 +20,12 @@ def api_admin_instances():
     users = conn.execute("SELECT id, username FROM users").fetchall()
     user_map = {str(u['id']): u['username'] for u in users}
     
-    for inst in im_data:
+    instances_list = im_data.get('instances', [])
+    for inst in instances_list:
         tid = str(inst.get('team_id', ''))
         inst['username'] = user_map.get(tid, f"Unknown (ID: {tid})")
         
-    return jsonify(im_data)
+    return jsonify(instances_list)
 
 @admin_bp.route('/instances/stop', methods=['POST'])
 @admin_required
@@ -168,3 +169,78 @@ def api_admin_toggle_challenge(name):
     except Exception as e:
         return jsonify({"error": str(e)}), 500
     return jsonify({"status": "success", "message": f"Challenge {name} visibility toggled"})
+
+@admin_bp.route('/notifications', methods=['POST'])
+@admin_required
+def api_admin_add_notification():
+    data = request.get_json(silent=True) or {}
+    title = data.get('title')
+    message = data.get('message')
+    
+    if not title or not message:
+        return jsonify({"error": "Title and message are required"}), 400
+        
+    conn = get_db()
+    try:
+        conn.execute("INSERT INTO notifications (title, message) VALUES (?, ?)", (title, message))
+        conn.commit()
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+        
+    return jsonify({"status": "success", "message": "Notification broadcasted successfully"})
+
+@admin_bp.route('/notifications/<int:notif_id>', methods=['DELETE'])
+@admin_required
+def api_admin_delete_notification(notif_id):
+    conn = get_db()
+    try:
+        conn.execute("DELETE FROM notifications WHERE id = ?", (notif_id,))
+        conn.commit()
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+        
+    return jsonify({"status": "success", "message": "Notification deleted"})
+
+@admin_bp.route('/settings', methods=['GET'])
+@admin_required
+def api_admin_get_settings():
+    conn = get_db()
+    row = conn.execute("SELECT start_time, end_time, is_paused, freeze_time FROM game_settings WHERE id = 1").fetchone()
+    if not row:
+        return jsonify({"error": "Settings not found"}), 404
+    return jsonify({
+        "start_time": row["start_time"],
+        "end_time": row["end_time"],
+        "is_paused": bool(row["is_paused"]),
+        "freeze_time": row["freeze_time"]
+    })
+
+@admin_bp.route('/settings', methods=['PUT'])
+@admin_required
+def api_admin_update_settings():
+    data = request.get_json(silent=True) or {}
+    start_time = data.get('start_time')
+    end_time = data.get('end_time')
+    is_paused = 1 if data.get('is_paused') else 0
+    freeze_time = data.get('freeze_time')
+    
+    conn = get_db()
+    try:
+        conn.execute('''
+            UPDATE game_settings 
+            SET start_time = ?, end_time = ?, is_paused = ?, freeze_time = ?
+            WHERE id = 1
+        ''', (start_time, end_time, is_paused, freeze_time))
+        conn.commit()
+        
+        # If game is paused, proactively kill all active instances
+        if is_paused == 1:
+            try:
+                http_requests.post(f"{Config.INSTANCE_MANAGER_URL}/instances/kill_all", timeout=10)
+            except Exception as im_e:
+                print("Failed to kill instances on pause:", im_e)
+                
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+        
+    return jsonify({"status": "success", "message": "Settings updated"})

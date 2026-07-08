@@ -19,6 +19,34 @@
         <div class="glass p-5 rounded-xl border border-slate-700 text-center animate-pulse"><div class="h-8 bg-slate-700 rounded w-1/2 mx-auto mb-2"></div><div class="h-4 bg-slate-700 rounded w-3/4 mx-auto"></div></div>
     </div>
 
+    <!-- Game Settings & Time Controls -->
+    <div class="mb-8 glass rounded-xl p-6 shadow-lg border-t-2 border-indigo-500">
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+            <h2 class="text-2xl font-bold text-white">Waktu & Kendali Lomba</h2>
+            <div class="flex gap-3" id="freeze-controls">
+                <!-- Buttons will be injected here -->
+            </div>
+        </div>
+        
+        <form id="gameSettingsForm" class="grid grid-cols-1 md:grid-cols-3 gap-6 items-end">
+            <div>
+                <label class="block text-sm font-medium text-gray-400 mb-1">Start Time (UTC)</label>
+                <input type="datetime-local" id="settingStartTime" step="1"
+                       class="w-full bg-slate-900/50 border border-slate-600 rounded px-3 py-2 text-white focus:outline-none focus:border-indigo-500">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-400 mb-1">End Time (UTC)</label>
+                <input type="datetime-local" id="settingEndTime" step="1"
+                       class="w-full bg-slate-900/50 border border-slate-600 rounded px-3 py-2 text-white focus:outline-none focus:border-indigo-500">
+            </div>
+            <div>
+                <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-2 px-6 rounded transition shadow-lg shadow-indigo-600/30">
+                    Simpan Jadwal
+                </button>
+            </div>
+        </form>
+    </div>
+
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
         
         <!-- Upload Form Column -->
@@ -162,6 +190,43 @@
             </table>
         </div>
     </div>
+    
+    <!-- Notifications Management Section -->
+    <div class="mt-8 glass rounded-xl p-6 shadow-lg border-t-2 border-amber-500">
+        <h2 class="text-2xl font-bold text-white mb-6">Manajemen Notifikasi</h2>
+        
+        <form id="addNotifForm" class="mb-8 p-4 bg-slate-800/30 rounded-lg border border-slate-700 space-y-4">
+            <div>
+                <label class="block text-sm font-medium text-gray-400 mb-1">Judul Pengumuman</label>
+                <input type="text" id="notifTitle" required placeholder="Cth: Server Maintenance"
+                       class="w-full bg-slate-900/50 border border-slate-600 rounded px-3 py-2 text-white focus:outline-none focus:border-amber-500">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-400 mb-1">Pesan (Mendukung baris baru)</label>
+                <textarea id="notifMessage" required rows="3" placeholder="Pesan pengumuman..."
+                          class="w-full bg-slate-900/50 border border-slate-600 rounded px-3 py-2 text-white focus:outline-none focus:border-amber-500"></textarea>
+            </div>
+            <button type="submit" class="bg-amber-600 hover:bg-amber-500 text-white font-bold py-2 px-6 rounded transition shadow-lg shadow-amber-600/30">
+                Broadcast Pengumuman
+            </button>
+        </form>
+
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+                <thead>
+                    <tr class="bg-slate-800/50 border-b border-slate-700">
+                        <th class="py-3 px-4 font-semibold text-gray-300 w-16">ID</th>
+                        <th class="py-3 px-4 font-semibold text-gray-300">Judul</th>
+                        <th class="py-3 px-4 font-semibold text-gray-300">Tanggal</th>
+                        <th class="py-3 px-4 font-semibold text-gray-300 text-right">Aksi</th>
+                    </tr>
+                </thead>
+                <tbody id="admin-notif-table">
+                    <tr><td colspan="4" class="py-6 text-center text-gray-500">Memuat notifikasi...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
 </div>
 
 <script>
@@ -185,7 +250,7 @@ fileInput.addEventListener('change', function(e) {
 
 async function loadAdminChallenges() {
     try {
-        const res = await fetch('/api/v2/admin/challenges', {
+        const res = await fetch('/api/v2/challenges', {
             headers: { 'Authorization': 'Bearer ' + adminToken }
         });
         
@@ -505,11 +570,182 @@ async function toggleBan(userId, currentStatus) {
     } catch(e) { alert('Gagal menghubungi server.'); }
 }
 
+async function loadAdminNotifications() {
+    try {
+        const res = await fetch('/api/v2/notifications', {
+            headers: { 'Authorization': 'Bearer ' + adminToken }
+        });
+        if(res.ok) {
+            const data = await res.json();
+            const tbody = document.getElementById('admin-notif-table');
+            if(data.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="4" class="py-6 text-center text-gray-500">Tidak ada pengumuman.</td></tr>`;
+                return;
+            }
+            let html = '';
+            data.forEach(notif => {
+                const dateStr = new Date(notif.created_at + 'Z').toLocaleString('id-ID');
+                html += `
+                    <tr class="border-b border-slate-700/50 hover:bg-slate-800/30 transition">
+                        <td class="py-3 px-4 text-gray-400">${notif.id}</td>
+                        <td class="py-3 px-4 text-white font-semibold">${escapeHTML(notif.title)}</td>
+                        <td class="py-3 px-4 text-gray-400 text-sm">${escapeHTML(dateStr)}</td>
+                        <td class="py-3 px-4 text-right">
+                            <button class="text-xs bg-rose-500/20 hover:bg-rose-500/40 text-rose-400 px-3 py-1.5 rounded transition" onclick="deleteNotification(${notif.id})">
+                                Delete
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            });
+            tbody.innerHTML = html;
+        }
+    } catch(e) { console.error(e); }
+}
+
+document.getElementById('addNotifForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const title = document.getElementById('notifTitle').value;
+    const message = document.getElementById('notifMessage').value;
+    
+    if(!confirm('Kirim pengumuman ini ke seluruh pemain?')) return;
+    
+    try {
+        const res = await fetch('/api/v2/admin/notifications', {
+            method: 'POST',
+            headers: {
+                'Authorization': 'Bearer ' + adminToken,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ title, message })
+        });
+        if(res.ok) {
+            document.getElementById('addNotifForm').reset();
+            loadAdminNotifications();
+        } else {
+            const data = await res.json();
+            alert('Gagal: ' + (data.error || 'Unknown error'));
+        }
+    } catch(err) { alert('Gagal menghubungi server.'); }
+});
+
+async function deleteNotification(id) {
+    if(!confirm('Hapus pengumuman ini secara permanen?')) return;
+    try {
+        const res = await fetch(`/api/v2/admin/notifications/${id}`, {
+            method: 'DELETE',
+            headers: { 'Authorization': 'Bearer ' + adminToken }
+        });
+        if(res.ok) {
+            loadAdminNotifications();
+        } else {
+            alert('Gagal menghapus notifikasi.');
+        }
+    } catch(e) { alert('Gagal menghubungi server.'); }
+}
+
+let currentSettings = {};
+
+async function loadGameSettings() {
+    try {
+        const res = await fetch('/api/v2/admin/settings', {
+            headers: { 'Authorization': 'Bearer ' + adminToken }
+        });
+        if(res.ok) {
+            currentSettings = await res.json();
+            if (currentSettings.start_time) {
+                // Convert UTC string to local datetime-local format
+                const d = new Date(currentSettings.start_time + 'Z');
+                document.getElementById('settingStartTime').value = new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 19);
+            }
+            if (currentSettings.end_time) {
+                const d = new Date(currentSettings.end_time + 'Z');
+                document.getElementById('settingEndTime').value = new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 19);
+            }
+            
+            updateFreezeControls();
+        }
+    } catch(e) { console.error(e); }
+}
+
+function updateFreezeControls() {
+    const container = document.getElementById('freeze-controls');
+    let html = '';
+    
+    if (currentSettings.is_paused) {
+        html += `<button onclick="togglePause(false)" class="bg-rose-600 hover:bg-rose-500 text-white text-sm font-bold py-2 px-4 rounded shadow-lg shadow-rose-600/30">
+                    RESUME GAME
+                 </button>`;
+    } else {
+        html += `<button onclick="togglePause(true)" class="bg-gray-700 hover:bg-rose-600 text-white text-sm font-bold py-2 px-4 rounded border border-gray-600">
+                    PAUSE GAME
+                 </button>`;
+    }
+    
+    if (currentSettings.freeze_time) {
+        html += `<button onclick="toggleFreeze(false)" class="bg-cyan-600 hover:bg-cyan-500 text-white text-sm font-bold py-2 px-4 rounded shadow-lg shadow-cyan-600/30">
+                    UNFREEZE SCOREBOARD
+                 </button>`;
+    } else {
+        html += `<button onclick="toggleFreeze(true)" class="bg-gray-700 hover:bg-cyan-600 text-white text-sm font-bold py-2 px-4 rounded border border-gray-600">
+                    FREEZE SCOREBOARD
+                 </button>`;
+    }
+    
+    container.innerHTML = html;
+}
+
+document.getElementById('gameSettingsForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    // Read local inputs and convert to UTC string
+    const sInput = document.getElementById('settingStartTime').value;
+    const eInput = document.getElementById('settingEndTime').value;
+    
+    const startTimeStr = sInput ? new Date(sInput).toISOString().replace('T', ' ').slice(0, 19) : null;
+    const endTimeStr = eInput ? new Date(eInput).toISOString().replace('T', ' ').slice(0, 19) : null;
+    
+    updateSettingsOnServer({ start_time: startTimeStr, end_time: endTimeStr });
+});
+
+async function togglePause(doPause) {
+    if(!confirm(doPause ? "PAUSE GAME: Pemain tidak akan bisa submit flag. Lanjutkan?" : "RESUME GAME: Buka kembali pengumpulan flag?")) return;
+    updateSettingsOnServer({ is_paused: doPause });
+}
+
+async function toggleFreeze(doFreeze) {
+    if(!confirm(doFreeze ? "FREEZE SCOREBOARD: Papan Skor akan diam, tapi pemain tetap bisa submit flag. Lanjutkan?" : "UNFREEZE SCOREBOARD: Papan skor akan kembali live. Lanjutkan?")) return;
+    const freezeTime = doFreeze ? new Date().toISOString().replace('T', ' ').slice(0, 19) : null;
+    updateSettingsOnServer({ freeze_time: freezeTime });
+}
+
+async function updateSettingsOnServer(updates) {
+    const payload = { ...currentSettings, ...updates };
+    try {
+        const res = await fetch('/api/v2/admin/settings', {
+            method: 'PUT',
+            headers: {
+                'Authorization': 'Bearer ' + adminToken,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(payload)
+        });
+        if(res.ok) {
+            alert('Pengaturan Waktu & Game berhasil disimpan!');
+            loadGameSettings();
+        } else {
+            alert('Gagal menyimpan pengaturan.');
+        }
+    } catch(e) { alert('Gagal menghubungi server.'); }
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     loadAdminChallenges();
     loadAdminInstances();
     loadAdminStats();
     loadAdminUsers();
+    loadAdminNotifications();
+    loadGameSettings();
     instancesTimer = setInterval(() => {
         loadAdminInstances();
         loadAdminStats();

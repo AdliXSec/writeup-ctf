@@ -11,9 +11,26 @@ from core.utils.scoring import get_challenge_scores
 
 game_bp = Blueprint('game_api', __name__, url_prefix='/api/v2')
 
+def check_game_active():
+    conn = get_db()
+    settings = conn.execute("SELECT start_time, end_time, is_paused FROM game_settings WHERE id = 1").fetchone()
+    if settings:
+        import datetime
+        now = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
+        if settings['start_time'] and now < settings['start_time']:
+            return jsonify({"error": "CTF hasn't started yet"}), 403
+        if settings['end_time'] and now > settings['end_time']:
+            return jsonify({"error": "CTF has ended"}), 403
+        if settings['is_paused']:
+            return jsonify({"error": "CTF is manually paused"}), 403
+    return None
+
 @game_bp.route('/game/instances/start', methods=['POST'])
 @jwt_required
 def api_instance_start():
+    err = check_game_active()
+    if err: return err
+    
     data = request.get_json(silent=True) or {}
     chal_name = data.get("challenge")
     
@@ -42,6 +59,8 @@ def api_instance_stop():
 @game_bp.route('/game/instances/extend', methods=['POST'])
 @jwt_required
 def api_instance_extend():
+    err = check_game_active()
+    if err: return err
     data = request.get_json(silent=True) or {}
     chal_name = data.get("challenge")
     resp = http_requests.post(
@@ -54,6 +73,8 @@ def api_instance_extend():
 @game_bp.route('/game/instances/reset', methods=['POST'])
 @jwt_required
 def api_instance_reset():
+    err = check_game_active()
+    if err: return err
     data = request.get_json(silent=True) or {}
     chal_name = data.get("challenge")
     http_requests.post(
@@ -71,10 +92,17 @@ def api_instance_reset():
 @game_bp.route('/challenges', methods=['GET'])
 @jwt_required
 def api_challenges():
+    conn = get_db()
+    settings = conn.execute("SELECT start_time FROM game_settings WHERE id = 1").fetchone()
+    if settings and settings['start_time']:
+        import datetime
+        now = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
+        if now < settings['start_time']:
+            return jsonify({"error": "Game has not started yet"}), 403
+
     team_id = g.user['id']
     instances = im_get_instances(team_id) or {}
     
-    conn = get_db()
     scores = get_challenge_scores(conn)
     
     try:
@@ -119,11 +147,33 @@ def api_challenges():
 @game_bp.route('/game/status', methods=['GET'])
 @jwt_required
 def api_game_status():
+    conn = get_db()
+    settings = conn.execute("SELECT start_time, end_time, is_paused, freeze_time FROM game_settings WHERE id = 1").fetchone()
+    
+    import datetime
+    now = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
+    
+    started = True
+    ended = False
+    accepting = True
+    
+    if settings:
+        if settings['start_time'] and now < settings['start_time']:
+            started = False
+            accepting = False
+        if settings['end_time'] and now > settings['end_time']:
+            ended = True
+            accepting = False
+        if settings['is_paused']:
+            accepting = False
+
     return jsonify({
         "match": {
-            "state": "running",
-            "started_at": "2026-06-29T00:00:00+00:00",
-            "accepting_submissions": True
+            "state": "ended" if ended else ("running" if started else "pending"),
+            "started_at": settings['start_time'] if settings else None,
+            "end_time": settings['end_time'] if settings else None,
+            "accepting_submissions": accepting,
+            "is_frozen": True if (settings and settings['freeze_time']) else False
         },
         "mode": "dynamic_instancing",
         "scheduler": {
@@ -137,8 +187,13 @@ def api_scoreboard():
     conn = get_db()
     scores = get_challenge_scores(conn)
     
-    users = conn.execute('SELECT id, username FROM users WHERE is_admin = 0').fetchall()
-    solves = conn.execute('SELECT user_id, challenge_id FROM solves').fetchall()
+    users = conn.execute('SELECT id, username FROM users WHERE is_admin = 0 AND is_banned = 0').fetchall()
+    settings = conn.execute("SELECT freeze_time FROM game_settings WHERE id = 1").fetchone()
+    
+    if settings and settings['freeze_time']:
+        solves = conn.execute('SELECT user_id, challenge_id FROM solves WHERE solved_at <= ?', (settings['freeze_time'],)).fetchall()
+    else:
+        solves = conn.execute('SELECT user_id, challenge_id FROM solves').fetchall()
     
     user_scores = {u['id']: {"username": u['username'], "score": 0} for u in users}
     
@@ -153,7 +208,7 @@ def api_scoreboard():
     scoreboard = []
     rank = 1
     for user_info in sorted_users:
-        if user_info["score"] > 0:
+        if user_info["score"] >= 0:
             scoreboard.append({
                 "rank": rank,
                 "team": user_info['username'],
@@ -171,13 +226,25 @@ def api_scoreboard():
 @jwt_required
 def api_attacks():
     conn = get_db()
-    query = '''
-        SELECT s.id, u.username, s.challenge_id, s.solved_at
-        FROM solves s 
-        JOIN users u ON s.user_id = u.id 
-        ORDER BY s.solved_at DESC LIMIT 50
-    '''
-    rows = conn.execute(query).fetchall()
+    settings = conn.execute("SELECT freeze_time FROM game_settings WHERE id = 1").fetchone()
+    if settings and settings['freeze_time']:
+        query = '''
+            SELECT s.id, u.username, s.challenge_id, s.solved_at
+            FROM solves s 
+            JOIN users u ON s.user_id = u.id 
+            WHERE u.is_admin = 0 AND u.is_banned = 0 AND s.solved_at <= ?
+            ORDER BY s.solved_at DESC LIMIT 50
+        '''
+        rows = conn.execute(query, (settings['freeze_time'],)).fetchall()
+    else:
+        query = '''
+            SELECT s.id, u.username, s.challenge_id, s.solved_at
+            FROM solves s 
+            JOIN users u ON s.user_id = u.id 
+            WHERE u.is_admin = 0 AND u.is_banned = 0
+            ORDER BY s.solved_at DESC LIMIT 50
+        '''
+        rows = conn.execute(query).fetchall()
     
     items = []
     for row in rows:
@@ -204,6 +271,19 @@ def api_submit():
     data = request.get_json(silent=True)
     if not isinstance(data, list):
         return jsonify({"type": "about:blank", "title": "Bad Request", "status": 400, "detail": "Expected array of flags"}), 400
+        
+    conn = get_db()
+    settings = conn.execute("SELECT start_time, end_time, is_paused FROM game_settings WHERE id = 1").fetchone()
+    
+    if settings:
+        import datetime
+        now = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
+        if settings['start_time'] and now < settings['start_time']:
+            return jsonify({"type": "about:blank", "title": "Forbidden", "status": 403, "detail": "CTF hasn't started yet"}), 403
+        if settings['end_time'] and now > settings['end_time']:
+            return jsonify({"type": "about:blank", "title": "Forbidden", "status": 403, "detail": "CTF has ended"}), 403
+        if settings['is_paused']:
+            return jsonify({"type": "about:blank", "title": "Forbidden", "status": 403, "detail": "CTF is manually paused"}), 403
     
     all_flags = im_get_all_flags()
     flag_lookup = {}
@@ -219,29 +299,41 @@ def api_submit():
     conn = get_db()
     
     for req in data:
-        chal_id = req.get('challenge_id')
-        flag_val = req.get('flag')
+        if isinstance(req, dict):
+            flag_val = req.get('flag')
+            provided_chal_id = req.get('challenge_id')
+        else:
+            flag_val = str(req)
+            provided_chal_id = None
+            
+        if not flag_val:
+            results.append({"challenge_id": "unknown", "status": "rejected", "message": "No flag provided"})
+            rejected += 1
+            continue
         
         if flag_val in flag_lookup:
             owner_team_id, real_chal_name = flag_lookup[flag_val]
             
-            if owner_team_id == submitter_team_id and real_chal_name == chal_id:
+            # Check if team owns this flag. If they provided a chal_id, make sure it matches too.
+            chal_match = (provided_chal_id == real_chal_name) if provided_chal_id else True
+            
+            if owner_team_id == submitter_team_id and chal_match:
                 try:
                     conn.execute(
                         'INSERT INTO solves (user_id, challenge_id, flag_value) VALUES (?, ?, ?)',
-                        (submitter_team_id, chal_id, flag_val)
+                        (submitter_team_id, real_chal_name, flag_val)
                     )
                     conn.commit()
-                    results.append({"challenge_id": chal_id, "status": "accepted", "message": "Flag correct!"})
+                    results.append({"challenge_id": real_chal_name, "status": "accepted", "message": "Flag correct!"})
                     accepted += 1
                 except sqlite3.IntegrityError:
-                    results.append({"challenge_id": chal_id, "status": "already_solved", "message": "You already solved this."})
+                    results.append({"challenge_id": real_chal_name, "status": "duplicate", "message": "You already solved this."})
                     rejected += 1
             else:
-                results.append({"challenge_id": chal_id, "status": "rejected", "message": "Invalid flag for this challenge/team"})
+                results.append({"challenge_id": provided_chal_id or "unknown", "status": "rejected", "message": "Invalid flag for this challenge/team"})
                 rejected += 1
         else:
-            results.append({"challenge_id": chal_id, "status": "rejected", "message": "Invalid flag format"})
+            results.append({"challenge_id": provided_chal_id or "unknown", "status": "rejected", "message": "Invalid flag format"})
             rejected += 1
             
     return jsonify({
@@ -249,3 +341,19 @@ def api_submit():
         "rejected": rejected,
         "results": results
     })
+
+@game_bp.route('/notifications', methods=['GET'])
+@jwt_required
+def api_notifications():
+    conn = get_db()
+    rows = conn.execute("SELECT id, title, message, created_at FROM notifications ORDER BY created_at DESC").fetchall()
+    
+    res = []
+    for r in rows:
+        res.append({
+            "id": r["id"],
+            "title": r["title"],
+            "message": r["message"],
+            "created_at": r["created_at"]
+        })
+    return jsonify(res)

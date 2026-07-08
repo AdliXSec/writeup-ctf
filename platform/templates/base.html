@@ -91,10 +91,11 @@
                             <a href="/challenges" class="hover:text-sky-400 transition">Challenges</a>
                             <a href="/status" class="hover:text-sky-400 transition">Status</a>
                             <a href="/attacks" class="hover:text-sky-400 transition">Attacks Feed</a>
+                            <a href="/notifications" class="hover:text-sky-400 transition text-amber-400">Notifications 🔔</a>
                             <span class="text-gray-400 mx-1">|</span>
                             <a href="/submit" class="hover:text-sky-400 transition font-semibold text-emerald-400">Submit Flag</a>
                             <span class="text-gray-400 mx-1">|</span>
-                            <a href="/profile" class="text-sm hover:text-sky-400 transition">Hi, <b>${escapeHTML(data.display_name)}</b></a>
+                            <a href="/profile" class="text-sm hover:text-sky-400 transition">Hi, <b>${escapeHTML(data.name)}</b></a>
                             <a href="javascript:void(0)" onclick="doLogout()" class="text-rose-400 hover:text-rose-300 transition text-sm ml-2">Logout</a>
                         `;
                     } else {

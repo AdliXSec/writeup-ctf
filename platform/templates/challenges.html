@@ -190,6 +190,10 @@ async function loadChallenges() {
     }
 }
 
-document.addEventListener('DOMContentLoaded', loadChallenges);
+document.addEventListener('DOMContentLoaded', () => {
+    loadChallenges();
+    // Auto-refresh the challenges list every 10 seconds to sync real-time state
+    setInterval(loadChallenges, 10000); 
+});
 </script>
 {% endblock %}

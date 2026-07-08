@@ -252,7 +252,7 @@ def api_instance_start():
         
     conn = get_db()
     chal = conn.execute('SELECT is_hidden FROM challenges WHERE name = ?', (chal_name,)).fetchone()
-    if not chal or (chal['is_hidden'] and not g.user.get('is_admin')):
+    if not chal or (chal['is_hidden'] and not g.user['is_admin']):
         return jsonify({"error": "Challenge is disabled or not found"}), 403
         
     resp = http_requests.post(
@@ -312,7 +312,7 @@ def api_challenges():
     
     conn = get_db()
     # Fetch all challenges for admins, only active ones for players
-    if g.user.get('is_admin'):
+    if g.user['is_admin']:
         rows = conn.execute('SELECT id, name, description, category, base_points, is_hidden FROM challenges').fetchall()
     else:
         rows = conn.execute('SELECT id, name, description, category, base_points, is_hidden FROM challenges WHERE is_hidden = 0').fetchall()
@@ -505,6 +505,48 @@ def api_admin_list_challenges():
             "is_hidden": bool(row['is_hidden'])
         })
     return jsonify(chal_list)
+
+@app.route('/api/v2/admin/instances', methods=['GET'])
+@admin_required
+def api_admin_list_instances():
+    try:
+        resp = http_requests.get(f"{INSTANCE_MANAGER_URL}/instances", timeout=10)
+        if resp.status_code != 200:
+            return jsonify({"error": "Failed to fetch from Instance Manager"}), 500
+        im_data = resp.json().get('instances', [])
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+        
+    conn = get_db()
+    users = conn.execute("SELECT id, username FROM users").fetchall()
+    user_map = {str(u['id']): u['username'] for u in users}
+    
+    for inst in im_data:
+        tid = str(inst.get('team_id', ''))
+        inst['username'] = user_map.get(tid, f"Unknown (ID: {tid})")
+        
+    return jsonify(im_data)
+
+@app.route('/api/v2/admin/instances/stop', methods=['POST'])
+@admin_required
+def api_admin_stop_instance():
+    data = request.get_json(silent=True) or {}
+    team_id = data.get('team_id')
+    challenge = data.get('challenge')
+    
+    if not team_id or not challenge:
+        return jsonify({"error": "Missing team_id or challenge"}), 400
+        
+    try:
+        resp = http_requests.post(
+            f"{INSTANCE_MANAGER_URL}/instances/stop",
+            json={"team_id": team_id, "challenge": challenge},
+            timeout=10
+        )
+        return make_response(resp.content, resp.status_code)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 
 @app.route('/api/v2/admin/challenges', methods=['POST'])
 @admin_required

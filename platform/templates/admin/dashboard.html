@@ -100,6 +100,30 @@
         </div>
 
     </div>
+    
+    <!-- Active Instances Section -->
+    <div class="mt-8 glass rounded-xl p-6 shadow-lg border-t-2 border-emerald-500">
+        <div class="flex justify-between items-center mb-6">
+            <h2 class="text-2xl font-bold text-white">Monitor Instance Pemain</h2>
+            <button onclick="loadAdminInstances()" class="text-xs bg-emerald-500/20 hover:bg-emerald-500/40 text-emerald-400 px-3 py-1.5 rounded transition">Refresh</button>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+                <thead>
+                    <tr class="bg-slate-800/50 border-b border-slate-700">
+                        <th class="py-3 px-4 font-semibold text-gray-300">Pemain / Tim</th>
+                        <th class="py-3 px-4 font-semibold text-gray-300">Challenge</th>
+                        <th class="py-3 px-4 font-semibold text-gray-300">Port</th>
+                        <th class="py-3 px-4 font-semibold text-gray-300">Kedaluwarsa</th>
+                        <th class="py-3 px-4 font-semibold text-gray-300 text-right">Aksi</th>
+                    </tr>
+                </thead>
+                <tbody id="admin-instances-table">
+                    <tr><td colspan="5" class="py-6 text-center text-gray-500">Memuat instance...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
 </div>
 
 <script>
@@ -289,6 +313,71 @@ document.getElementById('upload-form').addEventListener('submit', async function
     btn.innerHTML = isEditMode ? `Update Challenge Metadata 📝` : `Upload & Build Image 🚀`;
 });
 
-document.addEventListener('DOMContentLoaded', loadAdminChallenges);
+let instancesTimer;
+async function loadAdminInstances() {
+    try {
+        const res = await fetch('/api/v2/admin/instances', {
+            headers: { 'Authorization': 'Bearer ' + adminToken }
+        });
+        
+        if(res.ok) {
+            const data = await res.json();
+            const tbody = document.getElementById('admin-instances-table');
+            
+            if(data.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" class="py-6 text-center text-gray-500">Tidak ada instance aktif saat ini.</td></tr>`;
+                return;
+            }
+            
+            let html = '';
+            data.forEach(inst => {
+                const expiresDate = new Date(inst.expires_at);
+                html += `
+                    <tr class="border-b border-slate-700/50 hover:bg-slate-800/30 transition">
+                        <td class="py-3 px-4 font-bold text-white">${inst.username}</td>
+                        <td class="py-3 px-4 text-sky-400 font-bold uppercase">${inst.challenge}</td>
+                        <td class="py-3 px-4 text-fuchsia-400 font-mono">${inst.port}</td>
+                        <td class="py-3 px-4 text-emerald-400 font-mono text-sm">${expiresDate.toLocaleTimeString()}</td>
+                        <td class="py-3 px-4 text-right">
+                            <button class="text-xs bg-rose-500/20 hover:bg-rose-500/40 text-rose-400 px-3 py-1.5 rounded transition" onclick="killInstance('${inst.team_id}', '${inst.challenge}')">Kill</button>
+                        </td>
+                    </tr>
+                `;
+            });
+            tbody.innerHTML = html;
+        }
+    } catch(e) {
+        console.error("Failed to load instances", e);
+    }
+}
+
+async function killInstance(team_id, challenge) {
+    if(!confirm(`PERINGATAN!\n\nMematikan secara paksa instance '${challenge}'?\n\nLanjutkan?`)) return;
+    
+    try {
+        const res = await fetch(`/api/v2/admin/instances/stop`, {
+            method: 'POST',
+            headers: { 
+                'Authorization': 'Bearer ' + adminToken,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ team_id: team_id, challenge: challenge })
+        });
+        const data = await res.json();
+        if(res.ok) {
+            loadAdminInstances();
+        } else {
+            alert('Gagal mematikan instance: ' + (data.error || 'Unknown error'));
+        }
+    } catch(e) {
+        alert('Gagal menghubungi server.');
+    }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    loadAdminChallenges();
+    loadAdminInstances();
+    instancesTimer = setInterval(loadAdminInstances, 10000);
+});
 </script>
 {% endblock %}

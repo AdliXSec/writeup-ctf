@@ -9,14 +9,26 @@
 
     <!-- Alert Container -->
     <div id="admin-alert" class="hidden mb-6 p-4 rounded-lg border"></div>
-    
+
     <!-- System Health Stats -->
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-6 mb-8" id="admin-stats-container">
         <!-- Stats will be loaded here -->
-        <div class="glass p-5 rounded-xl border border-slate-700 text-center animate-pulse"><div class="h-8 bg-slate-700 rounded w-1/2 mx-auto mb-2"></div><div class="h-4 bg-slate-700 rounded w-3/4 mx-auto"></div></div>
-        <div class="glass p-5 rounded-xl border border-slate-700 text-center animate-pulse"><div class="h-8 bg-slate-700 rounded w-1/2 mx-auto mb-2"></div><div class="h-4 bg-slate-700 rounded w-3/4 mx-auto"></div></div>
-        <div class="glass p-5 rounded-xl border border-slate-700 text-center animate-pulse"><div class="h-8 bg-slate-700 rounded w-1/2 mx-auto mb-2"></div><div class="h-4 bg-slate-700 rounded w-3/4 mx-auto"></div></div>
-        <div class="glass p-5 rounded-xl border border-slate-700 text-center animate-pulse"><div class="h-8 bg-slate-700 rounded w-1/2 mx-auto mb-2"></div><div class="h-4 bg-slate-700 rounded w-3/4 mx-auto"></div></div>
+        <div class="glass p-5 rounded-xl border border-slate-700 text-center animate-pulse">
+            <div class="h-8 bg-slate-700 rounded w-1/2 mx-auto mb-2"></div>
+            <div class="h-4 bg-slate-700 rounded w-3/4 mx-auto"></div>
+        </div>
+        <div class="glass p-5 rounded-xl border border-slate-700 text-center animate-pulse">
+            <div class="h-8 bg-slate-700 rounded w-1/2 mx-auto mb-2"></div>
+            <div class="h-4 bg-slate-700 rounded w-3/4 mx-auto"></div>
+        </div>
+        <div class="glass p-5 rounded-xl border border-slate-700 text-center animate-pulse">
+            <div class="h-8 bg-slate-700 rounded w-1/2 mx-auto mb-2"></div>
+            <div class="h-4 bg-slate-700 rounded w-3/4 mx-auto"></div>
+        </div>
+        <div class="glass p-5 rounded-xl border border-slate-700 text-center animate-pulse">
+            <div class="h-8 bg-slate-700 rounded w-1/2 mx-auto mb-2"></div>
+            <div class="h-4 bg-slate-700 rounded w-3/4 mx-auto"></div>
+        </div>
     </div>
 
     <!-- Game Settings & Time Controls -->
@@ -27,20 +39,21 @@
                 <!-- Buttons will be injected here -->
             </div>
         </div>
-        
+
         <form id="gameSettingsForm" class="grid grid-cols-1 md:grid-cols-3 gap-6 items-end">
             <div>
                 <label class="block text-sm font-medium text-gray-400 mb-1">Start Time (UTC)</label>
                 <input type="datetime-local" id="settingStartTime" step="1"
-                       class="w-full bg-slate-900/50 border border-slate-600 rounded px-3 py-2 text-white focus:outline-none focus:border-indigo-500">
+                    class="w-full bg-slate-900/50 border border-slate-600 rounded px-3 py-2 text-white focus:outline-none focus:border-indigo-500">
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-400 mb-1">End Time (UTC)</label>
                 <input type="datetime-local" id="settingEndTime" step="1"
-                       class="w-full bg-slate-900/50 border border-slate-600 rounded px-3 py-2 text-white focus:outline-none focus:border-indigo-500">
+                    class="w-full bg-slate-900/50 border border-slate-600 rounded px-3 py-2 text-white focus:outline-none focus:border-indigo-500">
             </div>
             <div>
-                <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-2 px-6 rounded transition shadow-lg shadow-indigo-600/30">
+                <button type="submit"
+                    class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-2 px-6 rounded transition shadow-lg shadow-indigo-600/30">
                     Simpan Jadwal
                 </button>
             </div>
@@ -48,24 +61,28 @@
     </div>
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        
+
         <!-- Upload Form Column -->
         <div class="lg:col-span-1">
             <div class="glass rounded-xl p-6 shadow-lg border-t-2 border-sky-500">
                 <div class="flex justify-between items-center mb-6">
                     <h2 id="form-title" class="text-2xl font-bold text-white">Tambahkan Tantangan Baru</h2>
-                    <button type="button" id="cancel-edit-btn" onclick="resetForm()" class="hidden text-sm text-gray-400 hover:text-white transition">Batal Edit</button>
+                    <button type="button" id="cancel-edit-btn" onclick="resetForm()"
+                        class="hidden text-sm text-gray-400 hover:text-white transition">Batal Edit</button>
                 </div>
-                
+
                 <form id="upload-form" class="space-y-4">
                     <div>
                         <label class="block text-sm font-medium text-gray-300 mb-1">Nama Challenge</label>
-                        <input type="text" id="chal-name" required class="w-full bg-slate-900/50 border border-slate-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-sky-500" placeholder="contoh: sql-injection-101">
+                        <input type="text" id="chal-name" required
+                            class="w-full bg-slate-900/50 border border-slate-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-sky-500"
+                            placeholder="contoh: sql-injection-101">
                     </div>
-                    
+
                     <div>
                         <label class="block text-sm font-medium text-gray-300 mb-1">Kategori</label>
-                        <select id="chal-category" class="w-full bg-slate-900/50 border border-slate-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-sky-500">
+                        <select id="chal-category"
+                            class="w-full bg-slate-900/50 border border-slate-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-sky-500">
                             <option value="Web">Web Exploitation</option>
                             <option value="Pwn">Binary Exploitation</option>
                             <option value="Crypto">Cryptography</option>
@@ -77,29 +94,40 @@
 
                     <div>
                         <label class="block text-sm font-medium text-gray-300 mb-1">Base Points</label>
-                        <input type="number" id="chal-points" required min="50" max="1000" value="100" class="w-full bg-slate-900/50 border border-slate-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-sky-500">
+                        <input type="number" id="chal-points" required min="50" max="1000" value="100"
+                            class="w-full bg-slate-900/50 border border-slate-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-sky-500">
                     </div>
 
                     <div>
                         <label class="block text-sm font-medium text-gray-300 mb-1">Deskripsi Tantangan</label>
-                        <textarea id="chal-desc" rows="3" class="w-full bg-slate-900/50 border border-slate-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-sky-500" placeholder="Jelaskan sedikit tentang tantangan ini..."></textarea>
+                        <textarea id="chal-desc" rows="3"
+                            class="w-full bg-slate-900/50 border border-slate-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-sky-500"
+                            placeholder="Jelaskan sedikit tentang tantangan ini..."></textarea>
                     </div>
-                    
+
                     <div class="flex items-center mt-2 mb-4">
-                        <input type="checkbox" id="chal-dynamic" class="w-4 h-4 text-sky-600 bg-slate-900 border-slate-700 rounded focus:ring-sky-500 focus:ring-2">
-                        <label for="chal-dynamic" class="ml-2 text-sm font-medium text-gray-300">Gunakan Dynamic Scoring (Decaying Points)</label>
+                        <input type="checkbox" id="chal-dynamic"
+                            class="w-4 h-4 text-sky-600 bg-slate-900 border-slate-700 rounded focus:ring-sky-500 focus:ring-2">
+                        <label for="chal-dynamic" class="ml-2 text-sm font-medium text-gray-300">Gunakan Dynamic Scoring
+                            (Decaying Points)</label>
                     </div>
 
                     <!-- File Upload Dropzone -->
-                    <div class="mt-4">
-                        <label class="block text-sm font-medium text-gray-300 mb-1">Upload File ZIP</label>
-                        <div class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-slate-700 border-dashed rounded-lg hover:border-sky-500 transition cursor-pointer" id="dropzone" onclick="document.getElementById('chal-zip').click()">
+                    <div class="mt-4 mb-4">
+                        <label class="block text-sm font-medium text-gray-300 mb-1">Upload File ZIP Instance
+                            Docker</label>
+                        <div class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-slate-700 border-dashed rounded-lg hover:border-sky-500 transition cursor-pointer"
+                            id="dropzone" onclick="document.getElementById('chal-zip').click()">
                             <div class="space-y-1 text-center">
-                                <svg class="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48" aria-hidden="true">
-                                    <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                                <svg class="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none"
+                                    viewBox="0 0 48 48" aria-hidden="true">
+                                    <path
+                                        d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02"
+                                        stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
                                 </svg>
                                 <div class="flex text-sm text-gray-400 justify-center">
-                                    <label for="chal-zip" class="relative cursor-pointer bg-transparent rounded-md font-medium text-sky-400 hover:text-sky-300 focus-within:outline-none">
+                                    <label for="chal-zip"
+                                        class="relative cursor-pointer bg-transparent rounded-md font-medium text-sky-400 hover:text-sky-300 focus-within:outline-none">
                                         <span>Pilih file chall.zip</span>
                                         <input id="chal-zip" name="chal-zip" type="file" accept=".zip" class="sr-only">
                                     </label>
@@ -111,7 +139,33 @@
                         </div>
                     </div>
 
-                    <button type="submit" id="submit-btn" class="w-full mt-6 bg-sky-600 hover:bg-sky-500 text-white font-bold py-3 px-4 rounded-lg transition duration-200 shadow-lg shadow-sky-500/20">
+                    <div class="p-4 bg-slate-800/50 rounded-lg border border-slate-700">
+                        <div class="flex items-center mb-4">
+                            <input type="checkbox" id="chal-whitebox"
+                                class="w-4 h-4 text-emerald-600 bg-slate-900 border-slate-700 rounded focus:ring-emerald-500 focus:ring-2">
+                            <label for="chal-whitebox" class="ml-2 text-sm font-bold text-emerald-400">Jadikan Tantangan
+                                Whitebox (Source Code Terbuka)</label>
+                        </div>
+
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-xs font-medium text-gray-400 mb-1">URL Download Eksternal
+                                    (Opsional, cth: Google Drive)</label>
+                                <input type="text" id="chal-dl-url"
+                                    class="w-full bg-slate-900/50 border border-slate-700 rounded-lg px-3 py-1.5 text-white focus:outline-none focus:border-emerald-500"
+                                    placeholder="https://...">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-gray-400 mb-1">ATAU Upload File Source Code
+                                    (.zip)</label>
+                                <input type="file" id="chal-source-file" accept=".zip,.tar.gz,.gz,.txt,.py,.go,.php,.js"
+                                    class="block w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-emerald-500/20 file:text-emerald-400 hover:file:bg-emerald-500/30">
+                            </div>
+                        </div>
+                    </div>
+
+                    <button type="submit" id="submit-btn"
+                        class="w-full mt-6 bg-sky-600 hover:bg-sky-500 text-white font-bold py-3 px-4 rounded-lg transition duration-200 shadow-lg shadow-sky-500/20">
                         Upload & Build Image 🚀
                     </button>
                 </form>
@@ -134,7 +188,9 @@
                             </tr>
                         </thead>
                         <tbody id="admin-challenges-table">
-                            <tr><td colspan="5" class="py-6 text-center text-gray-500">Memuat tantangan...</td></tr>
+                            <tr>
+                                <td colspan="5" class="py-6 text-center text-gray-500">Memuat tantangan...</td>
+                            </tr>
                         </tbody>
                     </table>
                 </div>
@@ -142,12 +198,13 @@
         </div>
 
     </div>
-    
+
     <!-- Active Instances Section -->
     <div class="mt-8 glass rounded-xl p-6 shadow-lg border-t-2 border-emerald-500">
         <div class="flex justify-between items-center mb-6">
             <h2 class="text-2xl font-bold text-white">Monitor Instance Pemain</h2>
-            <button onclick="loadAdminInstances()" class="text-xs bg-emerald-500/20 hover:bg-emerald-500/40 text-emerald-400 px-3 py-1.5 rounded transition">Refresh</button>
+            <button onclick="loadAdminInstances()"
+                class="text-xs bg-emerald-500/20 hover:bg-emerald-500/40 text-emerald-400 px-3 py-1.5 rounded transition">Refresh</button>
         </div>
         <div class="overflow-x-auto">
             <table class="w-full text-left border-collapse">
@@ -161,17 +218,20 @@
                     </tr>
                 </thead>
                 <tbody id="admin-instances-table">
-                    <tr><td colspan="5" class="py-6 text-center text-gray-500">Memuat instance...</td></tr>
+                    <tr>
+                        <td colspan="5" class="py-6 text-center text-gray-500">Memuat instance...</td>
+                    </tr>
                 </tbody>
             </table>
         </div>
     </div>
-    
+
     <!-- User Management Section -->
     <div class="mt-8 glass rounded-xl p-6 shadow-lg border-t-2 border-fuchsia-500">
         <div class="flex justify-between items-center mb-6">
             <h2 class="text-2xl font-bold text-white">Manajemen Pemain (Sistem Banned)</h2>
-            <button onclick="loadAdminUsers()" class="text-xs bg-fuchsia-500/20 hover:bg-fuchsia-500/40 text-fuchsia-400 px-3 py-1.5 rounded transition">Refresh</button>
+            <button onclick="loadAdminUsers()"
+                class="text-xs bg-fuchsia-500/20 hover:bg-fuchsia-500/40 text-fuchsia-400 px-3 py-1.5 rounded transition">Refresh</button>
         </div>
         <div class="overflow-x-auto">
             <table class="w-full text-left border-collapse">
@@ -185,28 +245,31 @@
                     </tr>
                 </thead>
                 <tbody id="admin-users-table">
-                    <tr><td colspan="5" class="py-6 text-center text-gray-500">Memuat pemain...</td></tr>
+                    <tr>
+                        <td colspan="5" class="py-6 text-center text-gray-500">Memuat pemain...</td>
+                    </tr>
                 </tbody>
             </table>
         </div>
     </div>
-    
+
     <!-- Notifications Management Section -->
     <div class="mt-8 glass rounded-xl p-6 shadow-lg border-t-2 border-amber-500">
         <h2 class="text-2xl font-bold text-white mb-6">Manajemen Notifikasi</h2>
-        
+
         <form id="addNotifForm" class="mb-8 p-4 bg-slate-800/30 rounded-lg border border-slate-700 space-y-4">
             <div>
                 <label class="block text-sm font-medium text-gray-400 mb-1">Judul Pengumuman</label>
                 <input type="text" id="notifTitle" required placeholder="Cth: Server Maintenance"
-                       class="w-full bg-slate-900/50 border border-slate-600 rounded px-3 py-2 text-white focus:outline-none focus:border-amber-500">
+                    class="w-full bg-slate-900/50 border border-slate-600 rounded px-3 py-2 text-white focus:outline-none focus:border-amber-500">
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-400 mb-1">Pesan (Mendukung baris baru)</label>
                 <textarea id="notifMessage" required rows="3" placeholder="Pesan pengumuman..."
-                          class="w-full bg-slate-900/50 border border-slate-600 rounded px-3 py-2 text-white focus:outline-none focus:border-amber-500"></textarea>
+                    class="w-full bg-slate-900/50 border border-slate-600 rounded px-3 py-2 text-white focus:outline-none focus:border-amber-500"></textarea>
             </div>
-            <button type="submit" class="bg-amber-600 hover:bg-amber-500 text-white font-bold py-2 px-6 rounded transition shadow-lg shadow-amber-600/30">
+            <button type="submit"
+                class="bg-amber-600 hover:bg-amber-500 text-white font-bold py-2 px-6 rounded transition shadow-lg shadow-amber-600/30">
                 Broadcast Pengumuman
             </button>
         </form>
@@ -222,7 +285,9 @@
                     </tr>
                 </thead>
                 <tbody id="admin-notif-table">
-                    <tr><td colspan="4" class="py-6 text-center text-gray-500">Memuat notifikasi...</td></tr>
+                    <tr>
+                        <td colspan="4" class="py-6 text-center text-gray-500">Memuat notifikasi...</td>
+                    </tr>
                 </tbody>
             </table>
         </div>
@@ -230,54 +295,55 @@
 </div>
 
 <script>
-// Prevent unauthorized access visually (auth will still be enforced by backend)
-const adminToken = localStorage.getItem('admin_token');
-if(!adminToken) {
-    window.location.href = '/admin/login';
-}
-
-const fileInput = document.getElementById('chal-zip');
-const fileNameDisplay = document.getElementById('file-name-display');
-
-fileInput.addEventListener('change', function(e) {
-    if(this.files && this.files[0]) {
-        fileNameDisplay.textContent = this.files[0].name;
-        fileNameDisplay.classList.remove('hidden');
-    } else {
-        fileNameDisplay.classList.add('hidden');
+    // Prevent unauthorized access visually (auth will still be enforced by backend)
+    const adminToken = localStorage.getItem('admin_token');
+    if (!adminToken) {
+        window.location.href = '/admin/login';
     }
-});
 
-async function loadAdminChallenges() {
-    try {
-        const res = await fetch('/api/v2/challenges', {
-            headers: { 'Authorization': 'Bearer ' + adminToken }
-        });
-        
-        if(res.status === 401 || res.status === 403) {
-            localStorage.removeItem('admin_token');
-            window.location.href = '/admin/login';
-            return;
+    const fileInput = document.getElementById('chal-zip');
+    const fileNameDisplay = document.getElementById('file-name-display');
+
+    fileInput.addEventListener('change', function (e) {
+        if (this.files && this.files[0]) {
+            fileNameDisplay.textContent = this.files[0].name;
+            fileNameDisplay.classList.remove('hidden');
+        } else {
+            fileNameDisplay.classList.add('hidden');
         }
-        
-        if(res.ok) {
-            const data = await res.json();
-            const tbody = document.getElementById('admin-challenges-table');
-            
-            if(data.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="5" class="py-6 text-center text-gray-500">Belum ada tantangan di database.</td></tr>`;
+    });
+
+    async function loadAdminChallenges() {
+        try {
+            const res = await fetch('/api/v2/challenges', {
+                headers: { 'Authorization': 'Bearer ' + adminToken }
+            });
+
+            if (res.status === 401 || res.status === 403) {
+                localStorage.removeItem('admin_token');
+                window.location.href = '/admin/login';
                 return;
             }
-            
-            let html = '';
-            data.forEach(chal => {
-                html += `
+
+            if (res.ok) {
+                const data = await res.json();
+                const tbody = document.getElementById('admin-challenges-table');
+
+                if (data.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="5" class="py-6 text-center text-gray-500">Belum ada tantangan di database.</td></tr>`;
+                    return;
+                }
+
+                let html = '';
+                data.forEach(chal => {
+                    html += `
                     <tr class="border-b border-slate-700/50 hover:bg-slate-800/30 transition ${chal.is_hidden ? 'opacity-50' : ''}">
                         <td class="py-3 px-4 text-gray-400">#${chal.id}</td>
                         <td class="py-3 px-4 font-bold text-white">
                             ${chal.name}
                             ${chal.is_hidden ? '<span class="ml-2 text-[10px] uppercase font-bold tracking-wider bg-rose-500/20 text-rose-400 px-2 py-0.5 rounded">Disabled</span>' : ''}
                             ${chal.is_dynamic ? '<span class="ml-2 text-[10px] uppercase font-bold tracking-wider bg-fuchsia-500/20 text-fuchsia-400 px-2 py-0.5 rounded" title="Dynamic Scoring (Decaying Points)">📉 Dynamic</span>' : ''}
+                            ${chal.is_whitebox ? '<span class="ml-2 text-[10px] uppercase font-bold tracking-wider bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded" title="Whitebox Challenge">📦 Whitebox</span>' : ''}
                         </td>
                         <td class="py-3 px-4 text-sky-400 text-sm">${chal.category}</td>
                         <td class="py-3 px-4 text-fuchsia-400 font-mono">${chal.points} pts</td>
@@ -291,155 +357,167 @@ async function loadAdminChallenges() {
                         </td>
                     </tr>
                 `;
+                });
+                tbody.innerHTML = html;
+            }
+        } catch (e) {
+            console.error(e);
+        }
+    }
+
+    let isEditMode = false;
+
+    function resetForm() {
+        isEditMode = false;
+        document.getElementById('upload-form').reset();
+        document.getElementById('chal-name').readOnly = false;
+        document.getElementById('chal-dynamic').checked = false;
+        document.getElementById('chal-whitebox').checked = false;
+        document.getElementById('chal-dl-url').value = '';
+        document.getElementById('chal-source-file').value = '';
+        document.getElementById('submit-btn').innerHTML = `Upload & Build Image 🚀`;
+        document.getElementById('form-title').innerText = `Tambahkan Tantangan Baru`;
+        document.getElementById('file-name-display').classList.add('hidden');
+        document.getElementById('cancel-edit-btn').classList.add('hidden');
+    }
+
+    function editChallenge(chalEncoded) {
+        const chal = JSON.parse(decodeURIComponent(chalEncoded));
+        isEditMode = true;
+
+        document.getElementById('chal-name').value = chal.name;
+        document.getElementById('chal-name').readOnly = true; // Prevent changing name
+        document.getElementById('chal-category').value = chal.category;
+        document.getElementById('chal-points').value = chal.points;
+        document.getElementById('chal-desc').value = chal.description || '';
+        document.getElementById('chal-dynamic').checked = chal.is_dynamic || false;
+        document.getElementById('chal-whitebox').checked = chal.is_whitebox || false;
+        document.getElementById('chal-dl-url').value = chal.download_url || '';
+
+        document.getElementById('submit-btn').innerHTML = `Update Challenge Metadata 📝`;
+        document.getElementById('form-title').innerText = `Edit: ${chal.name}`;
+        document.getElementById('cancel-edit-btn').classList.remove('hidden');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    async function deleteChallenge(name) {
+        if (!confirm(`PERINGATAN!\n\nMenghapus challenge '${name}' akan mematikan semua instance yang sedang berjalan, menghapus Docker image-nya, dan memusnahkannya dari database secara permanen.\n\nLanjutkan?`)) return;
+
+        try {
+            const res = await fetch(`/api/v2/admin/challenges/${name}`, {
+                method: 'DELETE',
+                headers: { 'Authorization': 'Bearer ' + adminToken }
             });
-            tbody.innerHTML = html;
+            const data = await res.json();
+            if (res.ok) {
+                alert('Sukses menghapus challenge.');
+                loadAdminChallenges();
+            } else {
+                alert('Gagal: ' + (data.error || 'Unknown error'));
+            }
+        } catch (e) {
+            alert('Gagal menghubungi server.');
         }
-    } catch(e) {
-        console.error(e);
     }
-}
 
-let isEditMode = false;
-
-function resetForm() {
-    isEditMode = false;
-    document.getElementById('upload-form').reset();
-    document.getElementById('chal-name').readOnly = false;
-    document.getElementById('chal-dynamic').checked = false;
-    document.getElementById('submit-btn').innerHTML = `Upload & Build Image 🚀`;
-    document.getElementById('form-title').innerText = `Tambahkan Tantangan Baru`;
-    document.getElementById('file-name-display').classList.add('hidden');
-    document.getElementById('cancel-edit-btn').classList.add('hidden');
-}
-
-function editChallenge(chalEncoded) {
-    const chal = JSON.parse(decodeURIComponent(chalEncoded));
-    isEditMode = true;
-    
-    document.getElementById('chal-name').value = chal.name;
-    document.getElementById('chal-name').readOnly = true; // Prevent changing name
-    document.getElementById('chal-category').value = chal.category;
-    document.getElementById('chal-points').value = chal.points;
-    document.getElementById('chal-desc').value = chal.description || '';
-    document.getElementById('chal-dynamic').checked = chal.is_dynamic || false;
-    
-    document.getElementById('submit-btn').innerHTML = `Update Challenge Metadata 📝`;
-    document.getElementById('form-title').innerText = `Edit: ${chal.name}`;
-    document.getElementById('cancel-edit-btn').classList.remove('hidden');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-}
-
-async function deleteChallenge(name) {
-    if(!confirm(`PERINGATAN!\n\nMenghapus challenge '${name}' akan mematikan semua instance yang sedang berjalan, menghapus Docker image-nya, dan memusnahkannya dari database secara permanen.\n\nLanjutkan?`)) return;
-    
-    try {
-        const res = await fetch(`/api/v2/admin/challenges/${name}`, {
-            method: 'DELETE',
-            headers: { 'Authorization': 'Bearer ' + adminToken }
-        });
-        const data = await res.json();
-        if(res.ok) {
-            alert('Sukses menghapus challenge.');
+    async function toggleChallenge(name) {
+        try {
+            const res = await fetch(`/api/v2/admin/challenges/${name}/toggle`, {
+                method: 'PUT',
+                headers: { 'Authorization': 'Bearer ' + adminToken }
+            });
+            if (!res.ok) {
+                alert('Gagal mengubah status challenge');
+            }
             loadAdminChallenges();
-        } else {
-            alert('Gagal: ' + (data.error || 'Unknown error'));
+        } catch (e) {
+            alert('Gagal menghubungi server.');
         }
-    } catch(e) {
-        alert('Gagal menghubungi server.');
     }
-}
 
-async function toggleChallenge(name) {
-    try {
-        const res = await fetch(`/api/v2/admin/challenges/${name}/toggle`, {
-            method: 'PUT',
-            headers: { 'Authorization': 'Bearer ' + adminToken }
-        });
-        if(!res.ok) {
-            alert('Gagal mengubah status challenge');
-        }
-        loadAdminChallenges();
-    } catch(e) {
-        alert('Gagal menghubungi server.');
-    }
-}
+    document.getElementById('upload-form').addEventListener('submit', async function (e) {
+        e.preventDefault();
+        const btn = document.getElementById('submit-btn');
+        const alertBox = document.getElementById('admin-alert');
 
-document.getElementById('upload-form').addEventListener('submit', async function(e) {
-    e.preventDefault();
-    const btn = document.getElementById('submit-btn');
-    const alertBox = document.getElementById('admin-alert');
-    
-    const file = document.getElementById('chal-zip').files[0];
-    if(!isEditMode && !file) {
-        alertBox.textContent = 'Harap pilih file ZIP terlebih dahulu!';
-        alertBox.className = 'mb-6 p-4 rounded-lg border bg-rose-500/20 border-rose-500 text-rose-400';
-        alertBox.classList.remove('hidden');
-        return;
-    }
-    
-    const formData = new FormData();
-    formData.append('name', document.getElementById('chal-name').value);
-    formData.append('category', document.getElementById('chal-category').value);
-    formData.append('points', document.getElementById('chal-points').value);
-    formData.append('description', document.getElementById('chal-desc').value);
-    formData.append('is_dynamic', document.getElementById('chal-dynamic').checked);
-    if(file) {
-        formData.append('file', file);
-    }
-    
-    btn.disabled = true;
-    btn.innerHTML = file ? `<span class="animate-pulse">Building Docker Image... (Jangan ditutup) ⏳</span>` : `<span class="animate-pulse">Updating...</span>`;
-    alertBox.classList.add('hidden');
-    
-    try {
-        const res = await fetch('/api/v2/admin/challenges', {
-            method: 'POST',
-            headers: { 'Authorization': 'Bearer ' + adminToken },
-            body: formData
-        });
-        
-        const data = await res.json();
-        if(res.ok) {
-            alertBox.textContent = file ? 'Sukses! Challenge berhasil dibuat dan Docker Image siap dijalankan.' : 'Sukses! Metadata challenge berhasil diperbarui.';
-            alertBox.className = 'mb-6 p-4 rounded-lg border bg-emerald-500/20 border-emerald-500 text-emerald-400';
+        const file = document.getElementById('chal-zip').files[0];
+        if (!isEditMode && !file) {
+            alertBox.textContent = 'Harap pilih file ZIP terlebih dahulu!';
+            alertBox.className = 'mb-6 p-4 rounded-lg border bg-rose-500/20 border-rose-500 text-rose-400';
             alertBox.classList.remove('hidden');
-            resetForm();
-            loadAdminChallenges();
-        } else {
-            alertBox.textContent = data.error || 'Gagal menyimpan challenge';
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append('name', document.getElementById('chal-name').value);
+        formData.append('category', document.getElementById('chal-category').value);
+        formData.append('points', document.getElementById('chal-points').value);
+        formData.append('description', document.getElementById('chal-desc').value);
+        formData.append('is_dynamic', document.getElementById('chal-dynamic').checked);
+        formData.append('is_whitebox', document.getElementById('chal-whitebox').checked);
+        formData.append('download_url', document.getElementById('chal-dl-url').value);
+
+        const sourceFile = document.getElementById('chal-source-file').files[0];
+        if (sourceFile) {
+            formData.append('source_file', sourceFile);
+        }
+        if (file) {
+            formData.append('file', file);
+        }
+
+        btn.disabled = true;
+        btn.innerHTML = file ? `<span class="animate-pulse">Building Docker Image... (Jangan ditutup) ⏳</span>` : `<span class="animate-pulse">Updating...</span>`;
+        alertBox.classList.add('hidden');
+
+        try {
+            const res = await fetch('/api/v2/admin/challenges', {
+                method: 'POST',
+                headers: { 'Authorization': 'Bearer ' + adminToken },
+                body: formData
+            });
+
+            const data = await res.json();
+            if (res.ok) {
+                alertBox.textContent = file ? 'Sukses! Challenge berhasil dibuat dan Docker Image siap dijalankan.' : 'Sukses! Metadata challenge berhasil diperbarui.';
+                alertBox.className = 'mb-6 p-4 rounded-lg border bg-emerald-500/20 border-emerald-500 text-emerald-400';
+                alertBox.classList.remove('hidden');
+                resetForm();
+                loadAdminChallenges();
+            } else {
+                alertBox.textContent = data.error || 'Gagal menyimpan challenge';
+                alertBox.className = 'mb-6 p-4 rounded-lg border bg-rose-500/20 border-rose-500 text-rose-400';
+                alertBox.classList.remove('hidden');
+            }
+        } catch (e) {
+            alertBox.textContent = 'Koneksi terputus saat proses komunikasi dengan server.';
             alertBox.className = 'mb-6 p-4 rounded-lg border bg-rose-500/20 border-rose-500 text-rose-400';
             alertBox.classList.remove('hidden');
         }
-    } catch(e) {
-        alertBox.textContent = 'Koneksi terputus saat proses komunikasi dengan server.';
-        alertBox.className = 'mb-6 p-4 rounded-lg border bg-rose-500/20 border-rose-500 text-rose-400';
-        alertBox.classList.remove('hidden');
-    }
-    
-    btn.disabled = false;
-    btn.innerHTML = isEditMode ? `Update Challenge Metadata 📝` : `Upload & Build Image 🚀`;
-});
 
-let instancesTimer;
-async function loadAdminInstances() {
-    try {
-        const res = await fetch('/api/v2/admin/instances', {
-            headers: { 'Authorization': 'Bearer ' + adminToken }
-        });
-        
-        if(res.ok) {
-            const data = await res.json();
-            const tbody = document.getElementById('admin-instances-table');
-            
-            if(data.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="5" class="py-6 text-center text-gray-500">Tidak ada instance aktif saat ini.</td></tr>`;
-                return;
-            }
-            
-            let html = '';
-            data.forEach(inst => {
-                const expiresDate = new Date(inst.expires_at);
-                html += `
+        btn.disabled = false;
+        btn.innerHTML = isEditMode ? `Update Challenge Metadata 📝` : `Upload & Build Image 🚀`;
+    });
+
+    let instancesTimer;
+    async function loadAdminInstances() {
+        try {
+            const res = await fetch('/api/v2/admin/instances', {
+                headers: { 'Authorization': 'Bearer ' + adminToken }
+            });
+
+            if (res.ok) {
+                const data = await res.json();
+                const tbody = document.getElementById('admin-instances-table');
+
+                if (data.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="5" class="py-6 text-center text-gray-500">Tidak ada instance aktif saat ini.</td></tr>`;
+                    return;
+                }
+
+                let html = '';
+                data.forEach(inst => {
+                    const expiresDate = new Date(inst.expires_at);
+                    html += `
                     <tr class="border-b border-slate-700/50 hover:bg-slate-800/30 transition">
                         <td class="py-3 px-4 font-bold text-white">${inst.username}</td>
                         <td class="py-3 px-4 text-sky-400 font-bold uppercase">${inst.challenge}</td>
@@ -450,44 +528,44 @@ async function loadAdminInstances() {
                         </td>
                     </tr>
                 `;
+                });
+                tbody.innerHTML = html;
+            }
+        } catch (e) {
+            console.error("Failed to load instances", e);
+        }
+    }
+
+    async function killInstance(team_id, challenge) {
+        if (!confirm(`PERINGATAN!\n\nMematikan secara paksa instance '${challenge}'?\n\nLanjutkan?`)) return;
+
+        try {
+            const res = await fetch(`/api/v2/admin/instances/stop`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': 'Bearer ' + adminToken,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ team_id: team_id, challenge: challenge })
             });
-            tbody.innerHTML = html;
-        }
-    } catch(e) {
-        console.error("Failed to load instances", e);
-    }
-}
-
-async function killInstance(team_id, challenge) {
-    if(!confirm(`PERINGATAN!\n\nMematikan secara paksa instance '${challenge}'?\n\nLanjutkan?`)) return;
-    
-    try {
-        const res = await fetch(`/api/v2/admin/instances/stop`, {
-            method: 'POST',
-            headers: { 
-                'Authorization': 'Bearer ' + adminToken,
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ team_id: team_id, challenge: challenge })
-        });
-        const data = await res.json();
-        if(res.ok) {
-            loadAdminInstances();
-        } else {
-            alert('Gagal mematikan instance: ' + (data.error || 'Unknown error'));
-        }
-    } catch(e) {
-        alert('Gagal menghubungi server.');
-    }
-}
-
-async function loadAdminStats() {
-    try {
-        const res = await fetch('/api/v2/admin/stats', { headers: { 'Authorization': 'Bearer ' + adminToken } });
-        if(res.ok) {
             const data = await res.json();
-            const container = document.getElementById('admin-stats-container');
-            container.innerHTML = `
+            if (res.ok) {
+                loadAdminInstances();
+            } else {
+                alert('Gagal mematikan instance: ' + (data.error || 'Unknown error'));
+            }
+        } catch (e) {
+            alert('Gagal menghubungi server.');
+        }
+    }
+
+    async function loadAdminStats() {
+        try {
+            const res = await fetch('/api/v2/admin/stats', { headers: { 'Authorization': 'Bearer ' + adminToken } });
+            if (res.ok) {
+                const data = await res.json();
+                const container = document.getElementById('admin-stats-container');
+                container.innerHTML = `
                 <div class="glass p-5 rounded-xl border border-slate-700 text-center">
                     <div class="text-3xl font-bold text-sky-400 mb-1">${data.users.total}</div>
                     <div class="text-xs text-gray-400 uppercase tracking-wider font-semibold">Total Pemain</div>
@@ -505,31 +583,31 @@ async function loadAdminStats() {
                     <div class="text-xs text-gray-400 uppercase tracking-wider font-semibold">Total Solves</div>
                 </div>
             `;
-        }
-    } catch(e) { console.error(e); }
-}
-
-async function loadAdminUsers() {
-    try {
-        const res = await fetch('/api/v2/admin/users', { headers: { 'Authorization': 'Bearer ' + adminToken } });
-        if(res.ok) {
-            const data = await res.json();
-            const tbody = document.getElementById('admin-users-table');
-            if(data.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="5" class="py-6 text-center text-gray-500">Belum ada pemain terdaftar.</td></tr>`;
-                return;
             }
-            let html = '';
-            data.forEach(user => {
-                const rowClass = user.is_banned ? 'bg-rose-900/20 opacity-75' : 'hover:bg-slate-800/30';
-                const statusBadge = user.is_banned 
-                    ? `<span class="bg-rose-500/20 text-rose-400 px-2 py-0.5 rounded text-xs font-bold uppercase">Banned</span>`
-                    : `<span class="bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded text-xs font-bold uppercase">Active</span>`;
-                const roleBadge = user.is_admin
-                    ? `<span class="text-sky-400 text-xs font-bold uppercase">Admin</span>`
-                    : `<span class="text-gray-400 text-xs uppercase">Player</span>`;
-                
-                html += `
+        } catch (e) { console.error(e); }
+    }
+
+    async function loadAdminUsers() {
+        try {
+            const res = await fetch('/api/v2/admin/users', { headers: { 'Authorization': 'Bearer ' + adminToken } });
+            if (res.ok) {
+                const data = await res.json();
+                const tbody = document.getElementById('admin-users-table');
+                if (data.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="5" class="py-6 text-center text-gray-500">Belum ada pemain terdaftar.</td></tr>`;
+                    return;
+                }
+                let html = '';
+                data.forEach(user => {
+                    const rowClass = user.is_banned ? 'bg-rose-900/20 opacity-75' : 'hover:bg-slate-800/30';
+                    const statusBadge = user.is_banned
+                        ? `<span class="bg-rose-500/20 text-rose-400 px-2 py-0.5 rounded text-xs font-bold uppercase">Banned</span>`
+                        : `<span class="bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded text-xs font-bold uppercase">Active</span>`;
+                    const roleBadge = user.is_admin
+                        ? `<span class="text-sky-400 text-xs font-bold uppercase">Admin</span>`
+                        : `<span class="text-gray-400 text-xs uppercase">Player</span>`;
+
+                    html += `
                     <tr class="border-b border-slate-700/50 transition ${rowClass}">
                         <td class="py-3 px-4 text-gray-400">${user.id}</td>
                         <td class="py-3 px-4 font-bold text-white">${user.username}</td>
@@ -544,48 +622,48 @@ async function loadAdminUsers() {
                         </td>
                     </tr>
                 `;
-            });
-            tbody.innerHTML = html;
-        }
-    } catch(e) { console.error(e); }
-}
-
-async function toggleBan(userId, currentStatus) {
-    const actionStr = currentStatus ? "Membuka BAN (Unban)" : "Menge-BAN";
-    if(!confirm(`PERINGATAN!\n\n${actionStr} pemain ID ${userId}?\nJika di-ban, semua instansi pemain ini akan di-kill paksa.\n\nLanjutkan?`)) return;
-    
-    try {
-        const res = await fetch(`/api/v2/admin/users/${userId}/ban`, {
-            method: 'PUT',
-            headers: { 'Authorization': 'Bearer ' + adminToken }
-        });
-        if(res.ok) {
-            loadAdminUsers();
-            loadAdminStats();
-            loadAdminInstances();
-        } else {
-            const data = await res.json();
-            alert('Gagal: ' + (data.error || 'Unknown error'));
-        }
-    } catch(e) { alert('Gagal menghubungi server.'); }
-}
-
-async function loadAdminNotifications() {
-    try {
-        const res = await fetch('/api/v2/notifications', {
-            headers: { 'Authorization': 'Bearer ' + adminToken }
-        });
-        if(res.ok) {
-            const data = await res.json();
-            const tbody = document.getElementById('admin-notif-table');
-            if(data.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="4" class="py-6 text-center text-gray-500">Tidak ada pengumuman.</td></tr>`;
-                return;
+                });
+                tbody.innerHTML = html;
             }
-            let html = '';
-            data.forEach(notif => {
-                const dateStr = new Date(notif.created_at + 'Z').toLocaleString('id-ID');
-                html += `
+        } catch (e) { console.error(e); }
+    }
+
+    async function toggleBan(userId, currentStatus) {
+        const actionStr = currentStatus ? "Membuka BAN (Unban)" : "Menge-BAN";
+        if (!confirm(`PERINGATAN!\n\n${actionStr} pemain ID ${userId}?\nJika di-ban, semua instansi pemain ini akan di-kill paksa.\n\nLanjutkan?`)) return;
+
+        try {
+            const res = await fetch(`/api/v2/admin/users/${userId}/ban`, {
+                method: 'PUT',
+                headers: { 'Authorization': 'Bearer ' + adminToken }
+            });
+            if (res.ok) {
+                loadAdminUsers();
+                loadAdminStats();
+                loadAdminInstances();
+            } else {
+                const data = await res.json();
+                alert('Gagal: ' + (data.error || 'Unknown error'));
+            }
+        } catch (e) { alert('Gagal menghubungi server.'); }
+    }
+
+    async function loadAdminNotifications() {
+        try {
+            const res = await fetch('/api/v2/notifications', {
+                headers: { 'Authorization': 'Bearer ' + adminToken }
+            });
+            if (res.ok) {
+                const data = await res.json();
+                const tbody = document.getElementById('admin-notif-table');
+                if (data.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="4" class="py-6 text-center text-gray-500">Tidak ada pengumuman.</td></tr>`;
+                    return;
+                }
+                let html = '';
+                data.forEach(notif => {
+                    const dateStr = new Date(notif.created_at + 'Z').toLocaleString('id-ID');
+                    html += `
                     <tr class="border-b border-slate-700/50 hover:bg-slate-800/30 transition">
                         <td class="py-3 px-4 text-gray-400">${notif.id}</td>
                         <td class="py-3 px-4 text-white font-semibold">${escapeHTML(notif.title)}</td>
@@ -597,160 +675,160 @@ async function loadAdminNotifications() {
                         </td>
                     </tr>
                 `;
+                });
+                tbody.innerHTML = html;
+            }
+        } catch (e) { console.error(e); }
+    }
+
+    document.getElementById('addNotifForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const title = document.getElementById('notifTitle').value;
+        const message = document.getElementById('notifMessage').value;
+
+        if (!confirm('Kirim pengumuman ini ke seluruh pemain?')) return;
+
+        try {
+            const res = await fetch('/api/v2/admin/notifications', {
+                method: 'POST',
+                headers: {
+                    'Authorization': 'Bearer ' + adminToken,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ title, message })
             });
-            tbody.innerHTML = html;
-        }
-    } catch(e) { console.error(e); }
-}
-
-document.getElementById('addNotifForm').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const title = document.getElementById('notifTitle').value;
-    const message = document.getElementById('notifMessage').value;
-    
-    if(!confirm('Kirim pengumuman ini ke seluruh pemain?')) return;
-    
-    try {
-        const res = await fetch('/api/v2/admin/notifications', {
-            method: 'POST',
-            headers: {
-                'Authorization': 'Bearer ' + adminToken,
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ title, message })
-        });
-        if(res.ok) {
-            document.getElementById('addNotifForm').reset();
-            loadAdminNotifications();
-        } else {
-            const data = await res.json();
-            alert('Gagal: ' + (data.error || 'Unknown error'));
-        }
-    } catch(err) { alert('Gagal menghubungi server.'); }
-});
-
-async function deleteNotification(id) {
-    if(!confirm('Hapus pengumuman ini secara permanen?')) return;
-    try {
-        const res = await fetch(`/api/v2/admin/notifications/${id}`, {
-            method: 'DELETE',
-            headers: { 'Authorization': 'Bearer ' + adminToken }
-        });
-        if(res.ok) {
-            loadAdminNotifications();
-        } else {
-            alert('Gagal menghapus notifikasi.');
-        }
-    } catch(e) { alert('Gagal menghubungi server.'); }
-}
-
-let currentSettings = {};
-
-async function loadGameSettings() {
-    try {
-        const res = await fetch('/api/v2/admin/settings', {
-            headers: { 'Authorization': 'Bearer ' + adminToken }
-        });
-        if(res.ok) {
-            currentSettings = await res.json();
-            if (currentSettings.start_time) {
-                // Convert UTC string to local datetime-local format
-                const d = new Date(currentSettings.start_time + 'Z');
-                document.getElementById('settingStartTime').value = new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 19);
+            if (res.ok) {
+                document.getElementById('addNotifForm').reset();
+                loadAdminNotifications();
+            } else {
+                const data = await res.json();
+                alert('Gagal: ' + (data.error || 'Unknown error'));
             }
-            if (currentSettings.end_time) {
-                const d = new Date(currentSettings.end_time + 'Z');
-                document.getElementById('settingEndTime').value = new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 19);
-            }
-            
-            updateFreezeControls();
-        }
-    } catch(e) { console.error(e); }
-}
+        } catch (err) { alert('Gagal menghubungi server.'); }
+    });
 
-function updateFreezeControls() {
-    const container = document.getElementById('freeze-controls');
-    let html = '';
-    
-    if (currentSettings.is_paused) {
-        html += `<button onclick="togglePause(false)" class="bg-rose-600 hover:bg-rose-500 text-white text-sm font-bold py-2 px-4 rounded shadow-lg shadow-rose-600/30">
+    async function deleteNotification(id) {
+        if (!confirm('Hapus pengumuman ini secara permanen?')) return;
+        try {
+            const res = await fetch(`/api/v2/admin/notifications/${id}`, {
+                method: 'DELETE',
+                headers: { 'Authorization': 'Bearer ' + adminToken }
+            });
+            if (res.ok) {
+                loadAdminNotifications();
+            } else {
+                alert('Gagal menghapus notifikasi.');
+            }
+        } catch (e) { alert('Gagal menghubungi server.'); }
+    }
+
+    let currentSettings = {};
+
+    async function loadGameSettings() {
+        try {
+            const res = await fetch('/api/v2/admin/settings', {
+                headers: { 'Authorization': 'Bearer ' + adminToken }
+            });
+            if (res.ok) {
+                currentSettings = await res.json();
+                if (currentSettings.start_time) {
+                    // Convert UTC string to local datetime-local format
+                    const d = new Date(currentSettings.start_time + 'Z');
+                    document.getElementById('settingStartTime').value = new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 19);
+                }
+                if (currentSettings.end_time) {
+                    const d = new Date(currentSettings.end_time + 'Z');
+                    document.getElementById('settingEndTime').value = new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 19);
+                }
+
+                updateFreezeControls();
+            }
+        } catch (e) { console.error(e); }
+    }
+
+    function updateFreezeControls() {
+        const container = document.getElementById('freeze-controls');
+        let html = '';
+
+        if (currentSettings.is_paused) {
+            html += `<button onclick="togglePause(false)" class="bg-rose-600 hover:bg-rose-500 text-white text-sm font-bold py-2 px-4 rounded shadow-lg shadow-rose-600/30">
                     RESUME GAME
                  </button>`;
-    } else {
-        html += `<button onclick="togglePause(true)" class="bg-gray-700 hover:bg-rose-600 text-white text-sm font-bold py-2 px-4 rounded border border-gray-600">
+        } else {
+            html += `<button onclick="togglePause(true)" class="bg-gray-700 hover:bg-rose-600 text-white text-sm font-bold py-2 px-4 rounded border border-gray-600">
                     PAUSE GAME
                  </button>`;
-    }
-    
-    if (currentSettings.freeze_time) {
-        html += `<button onclick="toggleFreeze(false)" class="bg-cyan-600 hover:bg-cyan-500 text-white text-sm font-bold py-2 px-4 rounded shadow-lg shadow-cyan-600/30">
+        }
+
+        if (currentSettings.freeze_time) {
+            html += `<button onclick="toggleFreeze(false)" class="bg-cyan-600 hover:bg-cyan-500 text-white text-sm font-bold py-2 px-4 rounded shadow-lg shadow-cyan-600/30">
                     UNFREEZE SCOREBOARD
                  </button>`;
-    } else {
-        html += `<button onclick="toggleFreeze(true)" class="bg-gray-700 hover:bg-cyan-600 text-white text-sm font-bold py-2 px-4 rounded border border-gray-600">
+        } else {
+            html += `<button onclick="toggleFreeze(true)" class="bg-gray-700 hover:bg-cyan-600 text-white text-sm font-bold py-2 px-4 rounded border border-gray-600">
                     FREEZE SCOREBOARD
                  </button>`;
-    }
-    
-    container.innerHTML = html;
-}
-
-document.getElementById('gameSettingsForm').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    
-    // Read local inputs and convert to UTC string
-    const sInput = document.getElementById('settingStartTime').value;
-    const eInput = document.getElementById('settingEndTime').value;
-    
-    const startTimeStr = sInput ? new Date(sInput).toISOString().replace('T', ' ').slice(0, 19) : null;
-    const endTimeStr = eInput ? new Date(eInput).toISOString().replace('T', ' ').slice(0, 19) : null;
-    
-    updateSettingsOnServer({ start_time: startTimeStr, end_time: endTimeStr });
-});
-
-async function togglePause(doPause) {
-    if(!confirm(doPause ? "PAUSE GAME: Pemain tidak akan bisa submit flag. Lanjutkan?" : "RESUME GAME: Buka kembali pengumpulan flag?")) return;
-    updateSettingsOnServer({ is_paused: doPause });
-}
-
-async function toggleFreeze(doFreeze) {
-    if(!confirm(doFreeze ? "FREEZE SCOREBOARD: Papan Skor akan diam, tapi pemain tetap bisa submit flag. Lanjutkan?" : "UNFREEZE SCOREBOARD: Papan skor akan kembali live. Lanjutkan?")) return;
-    const freezeTime = doFreeze ? new Date().toISOString().replace('T', ' ').slice(0, 19) : null;
-    updateSettingsOnServer({ freeze_time: freezeTime });
-}
-
-async function updateSettingsOnServer(updates) {
-    const payload = { ...currentSettings, ...updates };
-    try {
-        const res = await fetch('/api/v2/admin/settings', {
-            method: 'PUT',
-            headers: {
-                'Authorization': 'Bearer ' + adminToken,
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(payload)
-        });
-        if(res.ok) {
-            alert('Pengaturan Waktu & Game berhasil disimpan!');
-            loadGameSettings();
-        } else {
-            alert('Gagal menyimpan pengaturan.');
         }
-    } catch(e) { alert('Gagal menghubungi server.'); }
-}
 
-document.addEventListener('DOMContentLoaded', () => {
-    loadAdminChallenges();
-    loadAdminInstances();
-    loadAdminStats();
-    loadAdminUsers();
-    loadAdminNotifications();
-    loadGameSettings();
-    instancesTimer = setInterval(() => {
+        container.innerHTML = html;
+    }
+
+    document.getElementById('gameSettingsForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        // Read local inputs and convert to UTC string
+        const sInput = document.getElementById('settingStartTime').value;
+        const eInput = document.getElementById('settingEndTime').value;
+
+        const startTimeStr = sInput ? new Date(sInput).toISOString().replace('T', ' ').slice(0, 19) : null;
+        const endTimeStr = eInput ? new Date(eInput).toISOString().replace('T', ' ').slice(0, 19) : null;
+
+        updateSettingsOnServer({ start_time: startTimeStr, end_time: endTimeStr });
+    });
+
+    async function togglePause(doPause) {
+        if (!confirm(doPause ? "PAUSE GAME: Pemain tidak akan bisa submit flag. Lanjutkan?" : "RESUME GAME: Buka kembali pengumpulan flag?")) return;
+        updateSettingsOnServer({ is_paused: doPause });
+    }
+
+    async function toggleFreeze(doFreeze) {
+        if (!confirm(doFreeze ? "FREEZE SCOREBOARD: Papan Skor akan diam, tapi pemain tetap bisa submit flag. Lanjutkan?" : "UNFREEZE SCOREBOARD: Papan skor akan kembali live. Lanjutkan?")) return;
+        const freezeTime = doFreeze ? new Date().toISOString().replace('T', ' ').slice(0, 19) : null;
+        updateSettingsOnServer({ freeze_time: freezeTime });
+    }
+
+    async function updateSettingsOnServer(updates) {
+        const payload = { ...currentSettings, ...updates };
+        try {
+            const res = await fetch('/api/v2/admin/settings', {
+                method: 'PUT',
+                headers: {
+                    'Authorization': 'Bearer ' + adminToken,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(payload)
+            });
+            if (res.ok) {
+                alert('Pengaturan Waktu & Game berhasil disimpan!');
+                loadGameSettings();
+            } else {
+                alert('Gagal menyimpan pengaturan.');
+            }
+        } catch (e) { alert('Gagal menghubungi server.'); }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        loadAdminChallenges();
         loadAdminInstances();
         loadAdminStats();
         loadAdminUsers();
-    }, 10000);
-});
+        loadAdminNotifications();
+        loadGameSettings();
+        instancesTimer = setInterval(() => {
+            loadAdminInstances();
+            loadAdminStats();
+            loadAdminUsers();
+        }, 10000);
+    });
 </script>
 {% endblock %}

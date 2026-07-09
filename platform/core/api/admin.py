@@ -1,5 +1,7 @@
+import os
 import requests as http_requests
 from flask import Blueprint, request, jsonify, make_response
+from werkzeug.utils import secure_filename
 
 from config import Config
 from core.db import get_db
@@ -107,6 +109,10 @@ def api_admin_add_challenge():
     file = request.files.get('file')
     is_dynamic = 1 if request.form.get('is_dynamic') == 'true' else 0
     
+    is_whitebox = 1 if request.form.get('is_whitebox') == 'true' else 0
+    download_url = request.form.get('download_url') or ""
+    source_file = request.files.get('source_file')
+    
     if not all([name, category, points, description]):
         return jsonify({"error": "Missing required fields"}), 400
         
@@ -122,18 +128,33 @@ def api_admin_add_challenge():
         except Exception as e:
             return jsonify({"error": f"Failed to contact Instance Manager: {str(e)}"}), 500
 
+    # 1.5 Handle Source Code Upload (Whitebox)
+    if is_whitebox and source_file and source_file.filename != '':
+        filename = secure_filename(f"{name}_source_{source_file.filename}")
+        downloads_dir = os.path.join(request.environ.get('FLASK_APP', ''), '..', 'static', 'downloads')
+        # Wait, using request.environ for paths might be brittle.
+        # Let's use current app static folder
+        from flask import current_app
+        downloads_dir = os.path.join(current_app.static_folder, 'downloads')
+        os.makedirs(downloads_dir, exist_ok=True)
+        source_path = os.path.join(downloads_dir, filename)
+        source_file.save(source_path)
+        download_url = f"/static/downloads/{filename}"
+
     # 2. Save to Scoreboard DB
     conn = get_db()
     try:
         conn.execute('''
-            INSERT INTO challenges (name, description, category, base_points, is_hidden, is_dynamic)
-            VALUES (?, ?, ?, ?, ?, ?)
+            INSERT INTO challenges (name, description, category, base_points, is_hidden, is_dynamic, is_whitebox, download_url)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             ON CONFLICT(name) DO UPDATE SET
             description=excluded.description,
             category=excluded.category,
             base_points=excluded.base_points,
-            is_dynamic=excluded.is_dynamic
-        ''', (name, description, category, points, 1, is_dynamic))
+            is_dynamic=excluded.is_dynamic,
+            is_whitebox=excluded.is_whitebox,
+            download_url=excluded.download_url
+        ''', (name, description, category, points, 1, is_dynamic, is_whitebox, download_url))
         conn.commit()
     except Exception as e:
         return jsonify({"error": str(e)}), 500

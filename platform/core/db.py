@@ -48,7 +48,9 @@ def init_db():
                 category TEXT,
                 base_points INTEGER DEFAULT 100,
                 is_hidden BOOLEAN DEFAULT 0,
-                is_dynamic BOOLEAN DEFAULT 0
+                is_dynamic BOOLEAN DEFAULT 0,
+                is_whitebox BOOLEAN DEFAULT 0,
+                download_url TEXT
             );
             CREATE TABLE IF NOT EXISTS notifications (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -74,7 +76,9 @@ def init_db():
         "ALTER TABLE users ADD COLUMN affiliation TEXT",
         "ALTER TABLE users ADD COLUMN country TEXT",
         "ALTER TABLE solves ADD COLUMN is_first_blood BOOLEAN DEFAULT 0",
-        "ALTER TABLE solves ADD COLUMN blood_tier INTEGER DEFAULT 0"
+        "ALTER TABLE solves ADD COLUMN blood_tier INTEGER DEFAULT 0",
+        "ALTER TABLE challenges ADD COLUMN is_whitebox BOOLEAN DEFAULT 0",
+        "ALTER TABLE challenges ADD COLUMN download_url TEXT"
     ]
     for mig in migrations:
         try:

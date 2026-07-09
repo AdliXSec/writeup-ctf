@@ -1,0 +1,16 @@
+services:
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ctf-frontend-v2
+    ports:
+      - "3000:80"
+    restart: unless-stopped
+    networks:
+      - ctf-net
+
+networks:
+  ctf-net:
+    external: true
+    name: ctf-net

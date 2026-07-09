@@ -1,0 +1,190 @@
+.home-container {
+  display: flex;
+  flex-direction: column;
+  gap: 4rem;
+  padding-bottom: 4rem;
+}
+
+.section-title {
+  font-size: 2rem;
+  font-weight: 700;
+  margin-bottom: 2rem;
+  text-align: center;
+  position: relative;
+  display: inline-block;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.section-title::after {
+  content: '';
+  position: absolute;
+  bottom: -10px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 50%;
+  height: 2px;
+  background: var(--accent-cyan);
+  box-shadow: 0 0 10px var(--accent-cyan-glow);
+}
+
+/* About Section (Terminal Style) */
+.about-section {
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.about-box {
+  padding: 0;
+  overflow: hidden;
+  border-left: 4px solid var(--accent-cyan);
+}
+
+.about-header {
+  background: rgba(0,0,0,0.4);
+  padding: 0.75rem 1rem;
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+
+.about-header .dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  margin-right: 0.5rem;
+}
+
+.bg-red { background: #ff5f56; }
+.bg-yellow { background: #ffbd2e; }
+.bg-green { background: #27c93f; }
+
+.about-title {
+  margin-left: 1rem;
+  font-size: 0.85rem;
+}
+
+.about-body {
+  padding: 2rem;
+  line-height: 1.8;
+  font-size: 1.05rem;
+  color: var(--text-main);
+  background: rgba(10, 14, 23, 0.6);
+  text-align: left;
+}
+
+.about-body p {
+  margin-bottom: 0;
+}
+
+/* Features Section */
+.features-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 2rem;
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+@media (min-width: 768px) {
+  .features-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.feature-card {
+  padding: 2rem;
+  text-align: center;
+}
+
+.feature-icon {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+  display: block;
+}
+
+.feature-card h3 {
+  color: var(--text-main);
+  margin-bottom: 1rem;
+  font-size: 1.25rem;
+}
+
+.feature-card p {
+  color: var(--text-muted);
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+/* Event Info (Time & Rules) Grid */
+.event-info-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 2rem;
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+@media (min-width: 768px) {
+  .event-info-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+/* Time/Countdown Section */
+.time-section {
+  padding: 2rem;
+}
+
+.countdown-wrapper {
+  display: flex;
+  justify-content: space-around;
+  margin-top: 1.5rem;
+}
+
+.countdown-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.countdown-val {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: var(--accent-magenta);
+  text-shadow: 0 0 15px rgba(217, 70, 239, 0.4);
+}
+
+.countdown-label {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  letter-spacing: 0.1em;
+}
+
+/* Rules Section */
+.rules-section {
+  padding: 2rem;
+}
+
+.rules-list {
+  list-style: none;
+  text-align: left;
+  margin-top: 1rem;
+}
+
+.rules-list li {
+  margin-bottom: 1rem;
+  padding-left: 1.5rem;
+  position: relative;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+.rules-list li::before {
+  content: '>';
+  position: absolute;
+  left: 0;
+  color: var(--accent-cyan);
+  font-weight: bold;
+  font-family: 'JetBrains Mono', monospace;
+}

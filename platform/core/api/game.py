@@ -191,17 +191,25 @@ def api_scoreboard():
     settings = conn.execute("SELECT freeze_time FROM game_settings WHERE id = 1").fetchone()
     
     if settings and settings['freeze_time']:
-        solves = conn.execute('SELECT user_id, challenge_id FROM solves WHERE solved_at <= ?', (settings['freeze_time'],)).fetchall()
+        solves = conn.execute('SELECT user_id, challenge_id, blood_tier FROM solves WHERE solved_at <= ?', (settings['freeze_time'],)).fetchall()
     else:
-        solves = conn.execute('SELECT user_id, challenge_id FROM solves').fetchall()
+        solves = conn.execute('SELECT user_id, challenge_id, blood_tier FROM solves').fetchall()
     
     user_scores = {u['id']: {"username": u['username'], "score": 0} for u in users}
     
     for solve in solves:
         uid = solve['user_id']
         chal_id = solve['challenge_id']
+        b_tier = solve['blood_tier']
+        
         if uid in user_scores:
             user_scores[uid]["score"] += scores.get(chal_id, 0)
+            if b_tier == 1:
+                user_scores[uid]["score"] += 50
+            elif b_tier == 2:
+                user_scores[uid]["score"] += 30
+            elif b_tier == 3:
+                user_scores[uid]["score"] += 10
             
     sorted_users = sorted(user_scores.values(), key=lambda x: x["score"], reverse=True)
     
@@ -318,13 +326,40 @@ def api_submit():
             chal_match = (provided_chal_id == real_chal_name) if provided_chal_id else True
             
             if owner_team_id == submitter_team_id and chal_match:
+                # Check for blood tier
+                solve_count = conn.execute("SELECT COUNT(*) FROM solves WHERE challenge_id = ?", (real_chal_name,)).fetchone()[0]
+                blood_tier = (solve_count + 1) if solve_count < 3 else 0
+                
                 try:
                     conn.execute(
-                        'INSERT INTO solves (user_id, challenge_id, flag_value) VALUES (?, ?, ?)',
-                        (submitter_team_id, real_chal_name, flag_val)
+                        'INSERT INTO solves (user_id, challenge_id, flag_value, is_first_blood, blood_tier) VALUES (?, ?, ?, ?, ?)',
+                        (submitter_team_id, real_chal_name, flag_val, 1 if blood_tier == 1 else 0, blood_tier)
                     )
                     conn.commit()
-                    results.append({"challenge_id": real_chal_name, "status": "accepted", "message": "Flag correct!"})
+                    
+                    if blood_tier > 0:
+                        # Broadcast notification
+                        team_name = g.user['username']
+                        if blood_tier == 1:
+                            notif_title = f"🩸 First Blood: {real_chal_name.upper()}!"
+                            bonus = 50
+                            tier_name = "FIRST BLOOD"
+                        elif blood_tier == 2:
+                            notif_title = f"🥈 Second Blood: {real_chal_name.upper()}!"
+                            bonus = 30
+                            tier_name = "SECOND BLOOD"
+                        elif blood_tier == 3:
+                            notif_title = f"🥉 Third Blood: {real_chal_name.upper()}!"
+                            bonus = 10
+                            tier_name = "THIRD BLOOD"
+                            
+                        notif_msg = f"Tim {team_name} berhasil merebut {tier_name} pada tantangan {real_chal_name.upper()} dan mendapatkan {bonus} poin ekstra!"
+                        conn.execute("INSERT INTO notifications (title, message) VALUES (?, ?)", (notif_title, notif_msg))
+                        conn.commit()
+                        
+                        results.append({"challenge_id": real_chal_name, "status": "accepted", "message": f"Flag correct! {tier_name} (+{bonus} pts)!"})
+                    else:
+                        results.append({"challenge_id": real_chal_name, "status": "accepted", "message": "Flag correct!"})
                     accepted += 1
                 except sqlite3.IntegrityError:
                     results.append({"challenge_id": real_chal_name, "status": "duplicate", "message": "You already solved this."})

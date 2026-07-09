@@ -20,14 +20,14 @@ import shutil
 app = Flask(__name__)
 DATA_DIR = os.environ.get("DATA_DIR", "/data")
 DB_PATH = os.path.join(DATA_DIR, "instances.db")
-PORT_BASE = 10000
-PORT_BLOCK = 100
-MAX_TEAMS = 100
-NETWORK_NAME = "ctf-instances"
+PORT_BASE = int(os.environ.get("PORT_BASE", 10000))
+PORT_BLOCK = int(os.environ.get("PORT_BLOCK", 100))
+MAX_TEAMS = int(os.environ.get("MAX_TEAMS", 100))
+NETWORK_NAME = os.environ.get("NETWORK_NAME", "ctf-net")
 
 DEFAULT_DURATION = timedelta(minutes=10)
 EXTEND_DURATION = timedelta(minutes=5)
-MAX_CONCURRENT_INSTANCES = 3
+MAX_CONCURRENT_INSTANCES = int(os.environ.get("MAX_CONCURRENT_INSTANCES", 3))
 
 logging.basicConfig(
     level=logging.INFO,

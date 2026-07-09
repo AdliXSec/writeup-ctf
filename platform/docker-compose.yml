@@ -6,9 +6,8 @@ services:
       - "8000:8000"
     volumes:
       - scoreboard_data:/app/data
-    environment:
-      - INSTANCE_MANAGER_URL=http://ctf-instance-manager:9000
-      - CTF_HOST=localhost
+    env_file:
+      - .env
     restart: unless-stopped
     networks:
       - ctf-net

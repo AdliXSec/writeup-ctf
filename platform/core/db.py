@@ -36,6 +36,8 @@ def init_db():
                 challenge_id TEXT NOT NULL,
                 flag_value TEXT NOT NULL,
                 solved_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                is_first_blood BOOLEAN DEFAULT 0,
+                blood_tier INTEGER DEFAULT 0,
                 FOREIGN KEY(user_id) REFERENCES users(id),
                 UNIQUE(user_id, challenge_id)
             );
@@ -70,13 +72,22 @@ def init_db():
         "ALTER TABLE users ADD COLUMN email TEXT",
         "ALTER TABLE users ADD COLUMN website TEXT",
         "ALTER TABLE users ADD COLUMN affiliation TEXT",
-        "ALTER TABLE users ADD COLUMN country TEXT"
+        "ALTER TABLE users ADD COLUMN country TEXT",
+        "ALTER TABLE solves ADD COLUMN is_first_blood BOOLEAN DEFAULT 0",
+        "ALTER TABLE solves ADD COLUMN blood_tier INTEGER DEFAULT 0"
     ]
     for mig in migrations:
         try:
             conn.execute(mig)
         except sqlite3.OperationalError:
             pass
+            
+    try:
+        # Migrate existing first bloods to tier 1
+        conn.execute("UPDATE solves SET blood_tier = 1 WHERE is_first_blood = 1 AND blood_tier = 0")
+        conn.commit()
+    except sqlite3.OperationalError:
+        pass
         
     try:
         hashed = generate_password_hash("0xL33XYAdliXSec12!@")

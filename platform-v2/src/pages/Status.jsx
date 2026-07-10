@@ -1,29 +1,30 @@
 import React, { useState, useEffect } from 'react';
+import api from '../utils/api';
 import './Status.css';
 
-const ATTACKS = [
-  { id: 1, time: "13:37:01", team: "0xR00T", target: "SQL Injection 101", status: "SUCCESS" },
-  { id: 2, time: "13:37:45", team: "NullSec", target: "Buffer Overflow Basics", status: "FAILED" },
-  { id: 3, time: "13:38:12", team: "CyberNinja", target: "RSA Weak Keys", status: "SUCCESS" },
-];
-
 export default function Status() {
-  const [logs, setLogs] = useState(ATTACKS);
+  const [logs, setLogs] = useState([]);
+  const [gameStatus, setGameStatus] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  // Simulate incoming attacks
+  const fetchData = async () => {
+    try {
+      const [statusRes, attacksRes] = await Promise.all([
+        api.get('/game/status'),
+        api.get('/attacks')
+      ]);
+      setGameStatus(statusRes.data);
+      setLogs(attacksRes.data.items || []);
+    } catch (err) {
+      console.error("Failed to fetch status data", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const timer = setInterval(() => {
-      const isSuccess = Math.random() > 0.5;
-      const newLog = {
-        id: Date.now(),
-        time: new Date().toLocaleTimeString('en-US', { hour12: false }),
-        team: "Player_" + Math.floor(Math.random() * 1000),
-        target: "Challenge_" + Math.floor(Math.random() * 10),
-        status: isSuccess ? "SUCCESS" : "FAILED"
-      };
-      setLogs(prev => [newLog, ...prev].slice(0, 15)); // Keep only last 15 logs
-    }, 3000);
-
+    fetchData();
+    const timer = setInterval(fetchData, 10000); // Polling every 10s
     return () => clearInterval(timer);
   }, []);
 
@@ -38,35 +39,49 @@ export default function Status() {
         {/* Match Information */}
         <div className="metrics-panel glass-panel">
           <h3 className="panel-title">Match Information</h3>
-          <div className="info-row">
-            <span className="metric-label">State</span>
-            <span className="text-cyan font-bold uppercase">running</span>
-          </div>
-          <div className="info-row">
-            <span className="metric-label">Started At</span>
-            <span className="mono text-muted">1/1/1970, 7:00:00 AM</span>
-          </div>
-          <div className="info-row">
-            <span className="metric-label">Accepting Submissions</span>
-            <span className="text-emerald font-bold">YES</span>
-          </div>
+          {gameStatus ? (
+            <>
+              <div className="info-row">
+                <span className="metric-label">State</span>
+                <span className="text-cyan font-bold uppercase">{gameStatus.match?.state}</span>
+              </div>
+              <div className="info-row">
+                <span className="metric-label">Started At</span>
+                <span className="mono text-muted">{gameStatus.match?.started_at || "Not Started"}</span>
+              </div>
+              <div className="info-row">
+                <span className="metric-label">Accepting Submissions</span>
+                <span className={`font-bold ${gameStatus.match?.accepting_submissions ? 'text-emerald' : 'text-red'}`}>
+                  {gameStatus.match?.accepting_submissions ? 'YES' : 'NO'}
+                </span>
+              </div>
+            </>
+          ) : (
+            <div className="mono text-muted">./fetching...</div>
+          )}
         </div>
 
         {/* Instance Manager */}
         <div className="metrics-panel glass-panel">
           <h3 className="panel-title">Instance Manager</h3>
-          <div className="info-row">
-            <span className="metric-label">Manager State</span>
-            <span className="text-emerald font-bold uppercase">RUNNING</span>
-          </div>
-          <div className="info-row">
-            <span className="metric-label">Architecture</span>
-            <span className="text-cyan font-bold">Dynamic On-Demand</span>
-          </div>
-          <div className="info-row">
-            <span className="metric-label">Mode</span>
-            <span className="text-magenta font-bold uppercase">JEOPARDY CTF</span>
-          </div>
+          {gameStatus ? (
+            <>
+              <div className="info-row">
+                <span className="metric-label">Manager State</span>
+                <span className="text-emerald font-bold uppercase">{gameStatus.scheduler?.state}</span>
+              </div>
+              <div className="info-row">
+                <span className="metric-label">Architecture</span>
+                <span className="text-cyan font-bold">Dynamic On-Demand</span>
+              </div>
+              <div className="info-row">
+                <span className="metric-label">Mode</span>
+                <span className="text-magenta font-bold uppercase">JEOPARDY CTF</span>
+              </div>
+            </>
+          ) : (
+            <div className="mono text-muted">./fetching...</div>
+          )}
         </div>
       </div>
 
@@ -103,19 +118,23 @@ export default function Status() {
             <div className="terminal-title">live_attacks.log</div>
           </div>
           <div className="terminal-body mono">
-            {logs.map(log => (
-              <div key={log.id} className="log-line">
-                <div className="log-content">
-                  <span className="log-time">[{log.time}]</span>
-                  <span className="log-team">{log.team}</span>
-                  <span className="log-action"> attacked </span>
-                  <span className="log-target">{log.target}</span>
+            {logs.map(log => {
+              // Extract time from solved_at
+              const timeStr = log.solved_at ? new Date(log.solved_at + 'Z').toLocaleTimeString('en-US', { hour12: false }) : '00:00:00';
+              return (
+                <div key={log.id} className="log-line">
+                  <div className="log-content">
+                    <span className="log-time">[{timeStr}]</span>
+                    <span className="log-team">{log.attacker}</span>
+                    <span className="log-action"> compromised </span>
+                    <span className="log-target">Challenge #{log.service}</span>
+                  </div>
+                  <span className="log-status success">
+                    [SUCCESS]
+                  </span>
                 </div>
-                <span className={`log-status ${log.status.toLowerCase()}`}>
-                  [{log.status}]
-                </span>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       </div>

@@ -143,6 +143,15 @@
   box-shadow: 0 0 10px rgba(244, 63, 94, 0.3);
 }
 
+.btn-download {
+  border: 1px solid var(--accent-magenta);
+  color: var(--accent-magenta);
+}
+.btn-download:hover {
+  background: rgba(217, 70, 239, 0.1);
+  box-shadow: 0 0 10px rgba(217, 70, 239, 0.3);
+}
+
 .flag-form {
   display: flex;
   gap: 1rem;

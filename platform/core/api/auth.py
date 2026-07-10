@@ -98,20 +98,16 @@ def api_register():
 def api_update_profile():
     data = request.get_json(silent=True) or {}
     
-    # Strictly filter allowed fields
-    email = data.get('email')
+    # Strictly filter allowed fields (email is read-only)
     website = data.get('website')
     affiliation = data.get('affiliation')
     country = data.get('country')
     username = data.get('username')
+    password = data.get('password')
     
     conn = get_db()
     
-    # Check if email is used by another account
-    if email:
-        existing = conn.execute('SELECT id FROM users WHERE email = ? AND id != ?', (email, g.user['id'])).fetchone()
-        if existing:
-            return jsonify({"type": "about:blank", "title": "Conflict", "status": 409, "detail": "Email already in use by another account"}), 409
+    # Email is strictly immutable, so we don't process it anymore.
             
     # Check if username is used by another account
     if username:
@@ -120,12 +116,21 @@ def api_update_profile():
             return jsonify({"type": "about:blank", "title": "Conflict", "status": 409, "detail": "Username already taken"}), 409
             
     try:
-        conn.execute('''
-            UPDATE users 
-            SET email = ?, website = ?, affiliation = ?, country = ?, username = COALESCE(?, username)
-            WHERE id = ?
-        ''', (email, website, affiliation, country, username, g.user['id']))
+        if password:
+            hashed = generate_password_hash(password)
+            conn.execute('''
+                UPDATE users 
+                SET website = ?, affiliation = ?, country = ?, username = COALESCE(?, username), password = ?
+                WHERE id = ?
+            ''', (website, affiliation, country, username, hashed, g.user['id']))
+        else:
+            conn.execute('''
+                UPDATE users 
+                SET website = ?, affiliation = ?, country = ?, username = COALESCE(?, username)
+                WHERE id = ?
+            ''', (website, affiliation, country, username, g.user['id']))
+            
         conn.commit()
         return jsonify({"status": "success", "detail": "Profile updated"})
     except sqlite3.IntegrityError:
-        return jsonify({"type": "about:blank", "title": "Conflict", "status": 409, "detail": "Email already in use by another account"}), 409
+        return jsonify({"type": "about:blank", "title": "Conflict", "status": 409, "detail": "Username already in use by another account"}), 409

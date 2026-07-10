@@ -1,12 +1,39 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import api from '../utils/api';
+import { useToast } from '../contexts/ToastContext';
 import './Auth.css';
 
 export default function Login() {
-  const handleSubmit = (e) => {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const navigate = useNavigate();
+  const toast = useToast();
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // Dummy login action
-    window.location.href = '/challenges';
+    setError(null);
+    setIsLoading(true);
+
+    try {
+      const response = await api.post('/authenticate', { email, password });
+      if (response.data.token) {
+        localStorage.setItem('ctf_token', response.data.token);
+        toast.success('Koneksi berhasil. Selamat datang!');
+        // Bisa diredirect ke dashboard / challenges
+        navigate('/challenges');
+      }
+    } catch (err) {
+      if (err.response && err.response.data && err.response.data.detail) {
+        setError(err.response.data.detail);
+      } else {
+        setError("Connection failed. Backend might be unreachable.");
+      }
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -29,13 +56,20 @@ export default function Login() {
           </div>
 
           <form onSubmit={handleSubmit}>
+            {error && (
+              <div className="terminal-line" style={{ color: '#ef4444', marginBottom: '1rem' }}>
+                <span className="terminal-prompt" style={{ color: '#ef4444' }}>!</span> {error}
+              </div>
+            )}
             <div className="terminal-input-group">
-              <label htmlFor="username" className="terminal-label">Username:</label>
+              <label htmlFor="email" className="terminal-label">Email:</label>
               <input 
-                type="text" 
-                id="username" 
+                type="email" 
+                id="email" 
                 className="terminal-input" 
-                placeholder="root"
+                placeholder="user@example.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 autoComplete="off"
                 required 
               />
@@ -48,12 +82,14 @@ export default function Login() {
                 id="password" 
                 className="terminal-input" 
                 placeholder="********" 
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
                 required 
               />
             </div>
 
-            <button type="submit" className="terminal-submit">
-              ./execute_login
+            <button type="submit" className="terminal-submit" disabled={isLoading}>
+              {isLoading ? './authenticating...' : './execute_login'}
             </button>
           </form>
 

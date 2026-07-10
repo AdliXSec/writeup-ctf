@@ -1,49 +1,49 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import api from '../utils/api';
 import ChallengeCard from '../components/ChallengeCard';
 import ChallengeModal from '../components/ChallengeModal';
-import '../App.css'; // For grid layout
-
-const DUMMY_CHALLENGES = [
-  {
-    id: 1,
-    name: "SQL Injection 101",
-    category: "Web",
-    points: 150,
-    isDynamic: true,
-    isHidden: false,
-    status: "stopped"
-  },
-  {
-    id: 2,
-    name: "Buffer Overflow Basics",
-    category: "Pwn",
-    points: 400,
-    isDynamic: true,
-    isHidden: false,
-    status: "running"
-  },
-  {
-    id: 3,
-    name: "RSA Weak Keys",
-    category: "Crypto",
-    points: 300,
-    isDynamic: false,
-    isHidden: false,
-    status: "stopped"
-  },
-  {
-    id: 4,
-    name: "Admin Panel Bypass",
-    category: "Web",
-    points: 500,
-    isDynamic: true,
-    isHidden: true,
-    status: "stopped"
-  }
-];
+import '../App.css'; 
 
 export default function Challenges() {
+  const [challenges, setChallenges] = useState([]);
   const [selectedChallenge, setSelectedChallenge] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    fetchChallenges();
+    const timer = setInterval(fetchChallenges, 10000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const fetchChallenges = async () => {
+    try {
+      const response = await api.get('/challenges');
+      // Format response to match UI expectations
+      const formattedData = response.data.map(chal => ({
+        ...chal,
+        isDynamic: chal.is_dynamic,
+        isHidden: chal.is_hidden,
+        status: chal.instance?.status || 'stopped'
+      }));
+      setChallenges(formattedData);
+      
+      setSelectedChallenge(prev => {
+        if (!prev) return null;
+        return formattedData.find(c => c.id === prev.id) || prev;
+      });
+    } catch (err) {
+      if (err.response && err.response.status === 401) {
+        navigate('/login');
+      } else {
+        setError(err.response?.data?.error || "Gagal memuat tantangan dari server.");
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <main className="main-content">
@@ -53,19 +53,34 @@ export default function Challenges() {
       </div>
 
       <div className="challenges-grid">
-        {DUMMY_CHALLENGES.map(chal => (
-          <ChallengeCard 
-            key={chal.id} 
-            challenge={chal} 
-            onClick={setSelectedChallenge}
-          />
-        ))}
+        {loading ? (
+          <div className="mono text-muted text-center" style={{ gridColumn: '1 / -1', padding: '2rem' }}>
+            ./memuat_modul_tantangan...
+          </div>
+        ) : error ? (
+          <div className="mono text-center" style={{ gridColumn: '1 / -1', padding: '2rem', color: 'var(--admin-red)' }}>
+            [!] {error}
+          </div>
+        ) : challenges.length === 0 ? (
+          <div className="mono text-muted text-center" style={{ gridColumn: '1 / -1', padding: '2rem' }}>
+            Tidak ada tantangan yang tersedia.
+          </div>
+        ) : (
+          challenges.map(chal => (
+            <ChallengeCard 
+              key={chal.id} 
+              challenge={chal} 
+              onClick={setSelectedChallenge}
+            />
+          ))
+        )}
       </div>
 
       {selectedChallenge && (
         <ChallengeModal 
           challenge={selectedChallenge} 
           onClose={() => setSelectedChallenge(null)} 
+          onRefresh={fetchChallenges}
         />
       )}
     </main>

@@ -1,19 +1,34 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import api from '../../utils/api';
 import '../../layouts/Admin.css';
 
 export default function AdminLogin() {
   const navigate = useNavigate();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [error, setError] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
   
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
-    // Simulasi login admin
-    if(username === 'admin' && password === 'admin') {
-      navigate('/admin');
-    } else {
-      alert("ROOT ACCESS DENIED");
+    setError(null);
+    setIsLoading(true);
+
+    try {
+      const response = await api.post('/admin/login', { username, password });
+      if (response.data.token) {
+        localStorage.setItem('ctf_token', response.data.token);
+        navigate('/admin');
+      }
+    } catch (err) {
+      if (err.response && err.response.data && err.response.data.error) {
+        setError(err.response.data.error);
+      } else {
+        setError("SYSTEM FAILURE: CONNECTION REJECTED");
+      }
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -32,6 +47,11 @@ export default function AdminLogin() {
         </div>
 
         <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+          {error && (
+            <div style={{ color: 'var(--admin-red)', fontWeight: 'bold', fontSize: '0.9rem', textAlign: 'center', border: '1px solid var(--admin-red)', padding: '0.5rem', background: 'rgba(239, 68, 68, 0.1)' }}>
+              [!] {error}
+            </div>
+          )}
           <div>
             <label className="admin-label mono">Username</label>
             <input 
@@ -56,8 +76,8 @@ export default function AdminLogin() {
             />
           </div>
 
-          <button type="submit" className="btn-admin-action btn-full" style={{ marginTop: '1rem', padding: '1rem' }}>
-            AUTHENTICATE
+          <button type="submit" className="btn-admin-action btn-full" style={{ marginTop: '1rem', padding: '1rem' }} disabled={isLoading}>
+            {isLoading ? 'AUTHENTICATING...' : 'AUTHENTICATE'}
           </button>
         </form>
 

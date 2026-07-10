@@ -1,11 +1,13 @@
 import React from 'react';
-import { BrowserRouter, Routes, Route, Link, useLocation } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Link, useLocation, useNavigate } from 'react-router-dom';
+import { ToastProvider } from './contexts/ToastContext';
 import './App.css';
 
 import Home from './pages/Home';
 import Challenges from './pages/Challenges';
 import Scoreboard from './pages/Scoreboard';
 import Status from './pages/Status';
+import Notifications from './pages/Notifications';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Profile from './pages/Profile';
@@ -21,6 +23,19 @@ function Navbar() {
   const [typedText, setTypedText] = React.useState('');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false);
   const fullText = "0xL33XY CTF";
+
+  const navigate = useNavigate();
+
+  // Check auth status based on token presence
+  const isAuthenticated = !!localStorage.getItem('ctf_token');
+
+  const handleLogout = (e) => {
+    e.preventDefault();
+    localStorage.removeItem('ctf_token');
+    localStorage.removeItem('adminToken');
+    setIsMobileMenuOpen(false);
+    navigate('/');
+  };
 
   React.useEffect(() => {
     let timeout;
@@ -63,17 +78,30 @@ function Navbar() {
         <Link to="/challenges" className={location.pathname === '/challenges' ? 'active' : ''} onClick={() => setIsMobileMenuOpen(false)}>Challenges</Link>
         <Link to="/scoreboard" className={location.pathname === '/scoreboard' ? 'active' : ''} onClick={() => setIsMobileMenuOpen(false)}>Scoreboard</Link>
         <Link to="/status" className={location.pathname === '/status' ? 'active' : ''} onClick={() => setIsMobileMenuOpen(false)}>Status</Link>
+        <Link to="/notifications" className={location.pathname === '/notifications' ? 'active' : ''} onClick={() => setIsMobileMenuOpen(false)}>Alerts</Link>
         <Link to="/profile" className={location.pathname === '/profile' ? 'active' : ''} onClick={() => setIsMobileMenuOpen(false)}>Profile</Link>
 
         {/* Mobile Login Button */}
-        <Link to="/login" className="btn-nav-login mono mobile-only" onClick={() => setIsMobileMenuOpen(false)}>
-          ./login
-        </Link>
+        {isAuthenticated ? (
+          <button className="btn-nav-login mono mobile-only" onClick={handleLogout} style={{ background: 'transparent', border: '1px solid var(--accent-magenta)', color: 'var(--accent-magenta)' }}>
+            ./logout
+          </button>
+        ) : (
+          <Link to="/login" className="btn-nav-login mono mobile-only" onClick={() => setIsMobileMenuOpen(false)}>
+            ./login
+          </Link>
+        )}
       </nav>
       <div className="nav-actions desktop-only">
-        <Link to="/login" className="btn-nav-login mono">
-          ./login
-        </Link>
+        {isAuthenticated ? (
+          <button className="btn-nav-login mono" onClick={handleLogout} style={{ background: 'transparent', border: '1px solid var(--accent-magenta)', color: 'var(--accent-magenta)' }}>
+            ./logout
+          </button>
+        ) : (
+          <Link to="/login" className="btn-nav-login mono">
+            ./login
+          </Link>
+        )}
       </div>
     </header>
   );
@@ -106,6 +134,7 @@ function AppContent() {
           <Route path="/challenges" element={<Challenges />} />
           <Route path="/scoreboard" element={<Scoreboard />} />
           <Route path="/status" element={<Status />} />
+          <Route path="/notifications" element={<Notifications />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
@@ -117,9 +146,11 @@ function AppContent() {
 
 function App() {
   return (
-    <BrowserRouter>
-      <AppContent />
-    </BrowserRouter>
+    <ToastProvider>
+      <BrowserRouter>
+        <AppContent />
+      </BrowserRouter>
+    </ToastProvider>
   );
 }
 

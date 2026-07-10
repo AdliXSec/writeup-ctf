@@ -1,12 +1,40 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import api from '../utils/api';
+import { useToast } from '../contexts/ToastContext';
 import './Auth.css';
 
 export default function Register() {
-  const handleSubmit = (e) => {
+  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
+  const [affiliation, setAffiliation] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
+  
+  const navigate = useNavigate();
+  const toast = useToast();
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // Dummy register action
-    window.location.href = '/login';
+    setError(null);
+    setIsLoading(true);
+
+    try {
+      await api.post('/register', { username, email, password });
+      
+      // Auto-login or redirect to login after successful registration
+      toast.success('Registrasi berhasil! Silakan login.');
+      navigate('/login');
+    } catch (err) {
+      if (err.response && err.response.data && err.response.data.detail) {
+        setError(err.response.data.detail);
+      } else {
+        setError('Connection failed. Backend might be unreachable.');
+      }
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -29,6 +57,12 @@ export default function Register() {
           </div>
 
           <form onSubmit={handleSubmit}>
+            {error && (
+              <div className="terminal-line" style={{ color: '#ef4444', marginBottom: '1rem' }}>
+                <span className="terminal-prompt" style={{ color: '#ef4444' }}>!</span> {error}
+              </div>
+            )}
+            
             <div className="terminal-input-group">
               <label htmlFor="username" className="terminal-label">Username:</label>
               <input 
@@ -36,6 +70,8 @@ export default function Register() {
                 id="username" 
                 className="terminal-input" 
                 placeholder="hacker1337" 
+                value={username}
+                onChange={e => setUsername(e.target.value)}
                 autoComplete="off"
                 required 
               />
@@ -48,6 +84,8 @@ export default function Register() {
                 id="email" 
                 className="terminal-input" 
                 placeholder="hacker@example.com" 
+                value={email}
+                onChange={e => setEmail(e.target.value)}
                 required 
               />
             </div>
@@ -59,6 +97,8 @@ export default function Register() {
                 id="affiliation" 
                 className="terminal-input" 
                 placeholder="(Optional)" 
+                value={affiliation}
+                onChange={e => setAffiliation(e.target.value)}
               />
             </div>
             
@@ -69,12 +109,14 @@ export default function Register() {
                 id="password" 
                 className="terminal-input" 
                 placeholder="********" 
+                value={password}
+                onChange={e => setPassword(e.target.value)}
                 required 
               />
             </div>
 
-            <button type="submit" className="terminal-submit">
-              ./generate_token
+            <button type="submit" className="terminal-submit" disabled={isLoading}>
+              {isLoading ? './generating...' : './generate_token'}
             </button>
           </form>
 

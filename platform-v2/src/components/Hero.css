@@ -7,6 +7,7 @@
   position: relative;
   overflow: hidden;
   margin-bottom: 4rem;
+  padding-bottom: 6rem; /* Pushes content slightly upwards */
   /* Membuat section ini full screen (keluar dari batas kontainer 1200px) */
   width: 100vw;
   left: 50%;
@@ -39,8 +40,27 @@
 }
 
 .hero-content {
-  max-width: 800px;
-  padding: 0 1rem;
+  max-width: 1200px;
+  width: 100%;
+  padding: 0 2rem;
+  margin: 0 auto;
+}
+
+.hero-split-layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4rem;
+  align-items: center;
+}
+
+.hero-left {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.text-left {
+  text-align: left;
 }
 
 .hero-title {
@@ -88,7 +108,6 @@
 .hero-actions {
   display: flex;
   gap: 1.5rem;
-  justify-content: center;
   flex-wrap: wrap;
 }
 
@@ -123,4 +142,186 @@
 .btn-secondary:hover {
   background: rgba(255, 255, 255, 0.05);
   transform: translateY(-2px);
+}
+
+/* --- Mock Terminal --- */
+
+.hero-right {
+  width: 100%;
+}
+
+.mock-terminal {
+  background: rgba(10, 14, 23, 0.85);
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  text-align: left;
+  height: 420px;
+  display: flex;
+  flex-direction: column;
+}
+
+.mock-terminal .terminal-header {
+  background: rgba(0, 0, 0, 0.6);
+  padding: 0.5rem 1rem;
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.mock-terminal .mac-buttons {
+  display: flex;
+  gap: 6px;
+  margin-right: 1rem;
+}
+
+.mock-terminal .mac-buttons span {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+}
+.mock-terminal .mac-buttons span:nth-child(1) { background: #ff5f56; }
+.mock-terminal .mac-buttons span:nth-child(2) { background: #ffbd2e; }
+.mock-terminal .mac-buttons span:nth-child(3) { background: #27c93f; }
+
+.mock-terminal .terminal-title {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+
+.mock-terminal .terminal-body {
+  padding: 1.5rem;
+  font-size: 0.9rem;
+  line-height: 1.6;
+  flex: 1;
+}
+
+.term-line {
+  margin-bottom: 0.5rem;
+}
+
+.term-cursor {
+  display: inline-block;
+  color: var(--accent-cyan);
+  animation: blink 1s step-end infinite;
+}
+
+/* --- New Decor Elements --- */
+
+.hero-stats {
+  display: flex;
+  justify-content: center;
+  gap: 2rem;
+  margin-top: 4rem;
+  flex-wrap: wrap;
+  animation: slideUp 0.8s ease-out 0.5s both;
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.stat-item {
+  padding: 1.5rem 2.5rem;
+  min-width: 200px;
+  background: rgba(10, 14, 23, 0.5);
+  border-top: 3px solid var(--accent-cyan);
+}
+.stat-item:nth-child(2) {
+  border-top: 3px solid var(--accent-magenta);
+}
+.stat-item:nth-child(3) {
+  border-top: 3px solid var(--status-running);
+}
+
+.stat-value {
+  font-size: 2.5rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+  text-shadow: 0 0 15px currentColor;
+}
+
+.stat-label {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.decor-left, .decor-right {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 0.85rem;
+  opacity: 0.3;
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  text-shadow: 0 0 5px currentColor;
+}
+
+.decor-left {
+  left: 3rem;
+  text-align: left;
+}
+
+.decor-right {
+  right: 3rem;
+  text-align: right;
+}
+
+.glitch-text {
+  color: var(--accent-cyan);
+  animation: subtleGlitch 3s infinite;
+}
+
+@keyframes subtleGlitch {
+  0%, 100% { opacity: 1; transform: translateX(0); }
+  92% { opacity: 1; transform: translateX(0); }
+  94% { opacity: 0.8; transform: translateX(-2px); }
+  96% { opacity: 1; transform: translateX(2px); }
+  98% { opacity: 0.8; transform: translateX(-1px); }
+}
+
+@media (max-width: 992px) {
+  .hero-split-layout {
+    grid-template-columns: 1fr;
+    gap: 3rem;
+  }
+  
+  .hero-left {
+    align-items: center;
+    text-align: center;
+  }
+  
+  .hero-left .text-left {
+    text-align: center;
+  }
+  
+  .hero-actions {
+    justify-content: center;
+  }
+}
+
+@media (max-width: 1200px) {
+  .decor-left, .decor-right {
+    display: none;
+  }
+}
+
+@media (max-width: 768px) {
+  .hero-stats {
+    gap: 1rem;
+    margin-top: 3rem;
+  }
+  .stat-item {
+    padding: 1rem 1.5rem;
+    min-width: 150px;
+  }
+  .stat-value {
+    font-size: 1.8rem;
+  }
 }

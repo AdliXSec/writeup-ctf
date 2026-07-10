@@ -39,6 +39,23 @@ body {
   overflow-x: hidden;
 }
 
+/* Global Scrollbar (Cyberpunk Style) */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: var(--bg-dark);
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(6, 182, 212, 0.5); /* Cyan */
+  border-radius: 5px;
+  border: 2px solid var(--bg-dark); /* Creates a padding effect around the thumb */
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(217, 70, 239, 0.8); /* Magenta on hover */
+}
+
 .mono {
   font-family: 'JetBrains Mono', monospace;
 }

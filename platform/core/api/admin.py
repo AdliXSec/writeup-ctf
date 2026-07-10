@@ -2,6 +2,7 @@ import os
 import requests as http_requests
 from flask import Blueprint, request, jsonify, make_response
 from werkzeug.utils import secure_filename
+from werkzeug.security import generate_password_hash
 
 from config import Config
 from core.db import get_db
@@ -77,6 +78,32 @@ def api_admin_users():
     res = [{"id": u["id"], "username": u["username"], "is_admin": bool(u["is_admin"]), "is_banned": bool(u["is_banned"])} for u in users]
     return jsonify(res)
 
+@admin_bp.route('/users', methods=['POST'])
+@admin_required
+def api_admin_create_admin():
+    data = request.get_json(silent=True) or {}
+    username = data.get('username')
+    password = data.get('password')
+    
+    if not username or not password:
+        return jsonify({"error": "Missing username or password"}), 400
+        
+    conn = get_db()
+    existing = conn.execute("SELECT id FROM users WHERE username = ?", (username,)).fetchone()
+    if existing:
+        return jsonify({"error": "Username already exists"}), 409
+        
+    hashed = generate_password_hash(password)
+    # create dummy email for admin since we just use username/password for admin
+    email = f"admin_{username}@local" 
+    try:
+        conn.execute("INSERT INTO users (username, email, password, is_admin) VALUES (?, ?, ?, 1)", (username, email, hashed))
+        conn.commit()
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+        
+    return jsonify({"status": "success", "message": "Admin user created successfully"}), 201
+
 @admin_bp.route('/users/<int:user_id>/ban', methods=['PUT'])
 @admin_required
 def api_admin_toggle_ban(user_id):
@@ -107,10 +134,16 @@ def api_admin_add_challenge():
     points = request.form.get('points', type=int)
     description = request.form.get('description')
     file = request.files.get('file')
-    is_dynamic = 1 if request.form.get('is_dynamic') == 'true' else 0
+    is_dynamic = 1 if str(request.form.get('is_dynamic')).lower() in ['true', '1'] else 0
     
-    is_whitebox = 1 if request.form.get('is_whitebox') == 'true' else 0
+    is_whitebox = 1 if str(request.form.get('is_whitebox')).lower() in ['true', '1'] else 0
     download_url = request.form.get('download_url') or ""
+    
+    min_points = request.form.get('min_points', type=int)
+    if min_points is None: min_points = 50
+    decay = request.form.get('decay', type=int)
+    if decay is None: decay = 10
+    
     source_file = request.files.get('source_file')
     
     if not all([name, category, points, description]):
@@ -119,7 +152,8 @@ def api_admin_add_challenge():
     # 1. Forward to Instance Manager (if file is provided)
     if file:
         try:
-            files = {'file': (file.filename, file.stream, file.mimetype)}
+            file_content = file.read()
+            files = {'file': (file.filename, file_content, file.mimetype)}
             data = {'name': name}
             r = http_requests.post(f"{Config.INSTANCE_MANAGER_URL}/admin/build", data=data, files=files, timeout=300)
             
@@ -143,18 +177,30 @@ def api_admin_add_challenge():
 
     # 2. Save to Scoreboard DB
     conn = get_db()
+    
+    # Preserve old download_url if not uploading a new one
+    if not source_file or source_file.filename == '':
+        try:
+            old_row = conn.execute("SELECT download_url FROM challenges WHERE name = ?", (name,)).fetchone()
+            if old_row and old_row['download_url']:
+                download_url = old_row['download_url']
+        except Exception:
+            pass
+
     try:
         conn.execute('''
-            INSERT INTO challenges (name, description, category, base_points, is_hidden, is_dynamic, is_whitebox, download_url)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO challenges (name, description, category, base_points, is_hidden, is_dynamic, is_whitebox, download_url, min_points, decay)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ON CONFLICT(name) DO UPDATE SET
             description=excluded.description,
             category=excluded.category,
             base_points=excluded.base_points,
             is_dynamic=excluded.is_dynamic,
             is_whitebox=excluded.is_whitebox,
-            download_url=excluded.download_url
-        ''', (name, description, category, points, 1, is_dynamic, is_whitebox, download_url))
+            download_url=excluded.download_url,
+            min_points=excluded.min_points,
+            decay=excluded.decay
+        ''', (name, description, category, points, 1, is_dynamic, is_whitebox, download_url, min_points, decay))
         conn.commit()
     except Exception as e:
         return jsonify({"error": str(e)}), 500
@@ -209,6 +255,29 @@ def api_admin_add_notification():
         return jsonify({"error": str(e)}), 500
         
     return jsonify({"status": "success", "message": "Notification broadcasted successfully"})
+
+@admin_bp.route('/users/<int:user_id>', methods=['DELETE'])
+@admin_required
+def api_admin_delete_user(user_id):
+    conn = get_db()
+    # Check if user is admin
+    user = conn.execute("SELECT is_admin FROM users WHERE id = ?", (user_id,)).fetchone()
+    if not user:
+        return jsonify({"error": "User not found"}), 404
+        
+    if user['is_admin']:
+        return jsonify({"error": "Cannot delete an admin account"}), 400
+        
+    try:
+        # Delete user solves first to maintain integrity (if we want, or rely on cascading)
+        conn.execute("DELETE FROM solves WHERE user_id = ?", (user_id,))
+        # Delete the user
+        conn.execute("DELETE FROM users WHERE id = ?", (user_id,))
+        conn.commit()
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+        
+    return jsonify({"status": "success", "message": "User deleted successfully"})
 
 @admin_bp.route('/notifications/<int:notif_id>', methods=['DELETE'])
 @admin_required

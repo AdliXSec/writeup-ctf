@@ -1,0 +1,8 @@
+{
+    "name": "phantom-script",
+    "internal_port": 80,
+    "flag_desc": "iconv_lfi_bypass",
+    "tmpfs": {"/tmp": "", "/run": ""},
+    "command": ["/bin/sh", "/app/start.sh"],
+    "env_extra": {}
+}

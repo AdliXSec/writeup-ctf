@@ -1,12 +1,29 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import './Admin.css';
 
 export default function AdminLayout() {
   const navigate = useNavigate();
 
+  useEffect(() => {
+    const token = localStorage.getItem('ctf_token');
+    if (!token) {
+      navigate('/admin/login');
+      return;
+    }
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      if (payload.role !== 'admin') {
+        navigate('/admin/login');
+      }
+    } catch (e) {
+      navigate('/admin/login');
+    }
+  }, [navigate]);
+
   const handleLogout = () => {
-    navigate('/login');
+    localStorage.removeItem('ctf_token');
+    navigate('/admin/login');
   };
 
   return (

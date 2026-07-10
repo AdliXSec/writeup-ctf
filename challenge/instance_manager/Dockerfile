@@ -12,4 +12,4 @@ RUN mkdir -p /data
 ENV DATA_DIR=/data
 EXPOSE 9000
 
-CMD ["gunicorn", "-w", "1", "-b", "0.0.0.0:9000", "--timeout", "120", "instance_manager:app"]
+CMD ["gunicorn", "-w", "1", "-b", "0.0.0.0:9000", "--timeout", "600", "instance_manager:app"]

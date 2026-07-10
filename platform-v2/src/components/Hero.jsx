@@ -127,7 +127,7 @@ export default function Hero() {
           </div>
 
           <div className="hero-right">
-            <div className="mock-terminal glass-panel">
+            <div className="mock-terminal">
               <div className="terminal-header">
                 <div className="mac-buttons">
                   <span></span><span></span><span></span>

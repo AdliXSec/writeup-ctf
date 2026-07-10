@@ -26,11 +26,22 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response && error.response.status === 401) {
-      // Clear token if expired/invalid
-      localStorage.removeItem('ctf_token');
-      // Otomatis ter-logout dan kembali ke public page (opsional)
-      // window.location.href = '/login'; 
+    if (error.response) {
+      if (error.response.status === 401) {
+        // Clear token if expired/invalid
+        localStorage.removeItem('ctf_token');
+      }
+      
+      // Dispatch global error event for ToastContext to pick up
+      const msg = error.response.data?.error || error.response.data?.detail || error.message;
+      window.dispatchEvent(new CustomEvent('api-error', { 
+        detail: { status: error.response.status, message: msg } 
+      }));
+    } else {
+      // Network errors (no response)
+      window.dispatchEvent(new CustomEvent('api-error', { 
+        detail: { status: 0, message: error.message } 
+      }));
     }
     return Promise.reject(error);
   }

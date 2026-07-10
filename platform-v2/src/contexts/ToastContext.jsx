@@ -10,14 +10,17 @@ export const useToast = () => {
 export const ToastProvider = ({ children }) => {
   const [toasts, setToasts] = useState([]);
 
-  const addToast = useCallback((message, type = 'info', duration = 4000) => {
+  const addToast = useCallback((type, title, message, duration = 4000) => {
     const id = Date.now().toString();
-    setToasts(prev => [...prev, { id, message, type }]);
+    setToasts(prev => [...prev, { id, type, title, message }]);
     
-    if (duration > 0) {
+    // Default duration if missing or invalid
+    const time = typeof duration === 'number' ? duration : 4000;
+    
+    if (time > 0) {
       setTimeout(() => {
         removeToast(id);
-      }, duration);
+      }, time);
     }
     return id;
   }, []);
@@ -26,10 +29,10 @@ export const ToastProvider = ({ children }) => {
     setToasts(prev => prev.filter(t => t.id !== id));
   }, []);
 
-  const success = (msg, duration) => addToast(msg, 'success', duration);
-  const error = (msg, duration) => addToast(msg, 'error', duration);
-  const info = (msg, duration) => addToast(msg, 'info', duration);
-  const warning = (msg, duration) => addToast(msg, 'warning', duration);
+  const success = (msg, duration) => addToast('success', null, msg, duration);
+  const error = (msg, duration) => addToast('error', null, msg, duration);
+  const info = (msg, duration) => addToast('info', null, msg, duration);
+  const warning = (msg, duration) => addToast('warning', null, msg, duration);
 
   return (
     <ToastContext.Provider value={{ addToast, removeToast, success, error, info, warning }}>
@@ -43,7 +46,10 @@ export const ToastProvider = ({ children }) => {
               {toast.type === 'info' && 'i'}
               {toast.type === 'warning' && '!'}
             </div>
-            <div className="toast-message mono">{toast.message}</div>
+            <div className="toast-message mono">
+              {toast.title && <strong style={{ display: 'block', marginBottom: '0.25rem', fontSize: '1.05em' }}>{toast.title}</strong>}
+              {toast.message}
+            </div>
             <button className="toast-close" onClick={() => removeToast(toast.id)}>&times;</button>
           </div>
         ))}

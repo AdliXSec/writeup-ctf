@@ -1,7 +1,30 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Link, useLocation, useNavigate } from 'react-router-dom';
-import { ToastProvider } from './contexts/ToastContext';
+import { ToastProvider, useToast } from './contexts/ToastContext';
 import './App.css';
+
+function GlobalErrorHandler() {
+  const { addToast } = useToast();
+
+  React.useEffect(() => {
+    const handleApiError = (e) => {
+      const { status, message } = e.detail;
+      // Filter out 401 Unauthorized since it's handled by redirection/clearing token
+      if (status !== 401) {
+        if (status >= 500 || status === 0) {
+          addToast('error', 'Server Error', message, 5000);
+        } else if (status >= 400) {
+          addToast('warning', 'Request Error', message, 4000);
+        }
+      }
+    };
+
+    window.addEventListener('api-error', handleApiError);
+    return () => window.removeEventListener('api-error', handleApiError);
+  }, [addToast]);
+
+  return null; // This component doesn't render anything
+}
 
 import Home from './pages/Home';
 import Challenges from './pages/Challenges';
@@ -113,20 +136,24 @@ function AppContent() {
 
   if (isAdmin) {
     return (
-      <Routes>
-        <Route path="/admin/login" element={<AdminLogin />} />
-        <Route path="/admin" element={<AdminLayout />}>
+      <>
+        <GlobalErrorHandler />
+        <Routes>
+          <Route path="/admin/login" element={<AdminLogin />} />
+          <Route path="/admin" element={<AdminLayout />}>
           <Route index element={<AdminOverview />} />
           <Route path="challenges" element={<AdminChallenges />} />
           <Route path="users" element={<AdminUsers />} />
           <Route path="broadcast" element={<AdminBroadcast />} />
         </Route>
       </Routes>
+      </>
     );
   }
 
   return (
     <div className="app-container">
+      <GlobalErrorHandler />
       <Navbar />
       <main className="main-content">
         <Routes>

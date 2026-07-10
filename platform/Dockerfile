@@ -7,4 +7,4 @@ RUN mkdir -p /app/data
 ENV FLASK_APP=app.py
 ENV FLASK_ENV=production
 EXPOSE 8000
-CMD ["gunicorn", "-w", "4", "-b", "0.0.0.0:8000", "app:app"]
+CMD ["gunicorn", "-w", "4", "--timeout", "600", "-b", "0.0.0.0:8000", "app:app"]

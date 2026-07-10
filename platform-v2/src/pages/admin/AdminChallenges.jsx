@@ -1,10 +1,42 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import api from '../../utils/api';
+import { useToast } from '../../contexts/ToastContext';
 
 export default function AdminChallenges() {
+  const { addToast } = useToast();
+  
+  const [challenges, setChallenges] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [dragActive, setDragActive] = useState(false);
-  const [isWhitebox, setIsWhitebox] = useState(false);
+  
+  const [formData, setFormData] = useState({
+    name: '',
+    category: 'Web Exploitation',
+    points: 100,
+    min_points: 50,
+    decay: 10,
+    description: '',
+    is_dynamic: false,
+    is_whitebox: false
+  });
+  
   const [instanceFile, setInstanceFile] = useState(null);
   const [sourceFile, setSourceFile] = useState(null);
+
+  const fetchChallenges = async () => {
+    try {
+      const res = await api.get('/challenges');
+      setChallenges(res.data);
+      setLoading(false);
+    } catch (err) {
+      addToast('error', 'Gagal memuat tantangan', err.response?.data?.error || err.message);
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchChallenges();
+  }, []);
 
   const handleDrag = function(e) {
     e.preventDefault();
@@ -25,40 +57,179 @@ export default function AdminChallenges() {
     }
   };
 
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    const data = new FormData();
+    data.append('name', formData.name);
+    data.append('category', formData.category);
+    data.append('points', formData.points);
+    data.append('min_points', formData.min_points);
+    data.append('decay', formData.decay);
+    data.append('description', formData.description);
+    data.append('is_dynamic', formData.is_dynamic);
+    data.append('is_whitebox', formData.is_whitebox);
+    
+    if (instanceFile) data.append('file', instanceFile);
+    if (sourceFile) data.append('source_file', sourceFile);
+
+    try {
+      addToast('info', 'Mengunggah...', 'Sedang memproses challenge, mohon tunggu.');
+      await api.post('/admin/challenges', data, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      });
+      addToast('success', 'Berhasil', 'Tantangan berhasil ditambahkan ke platform.');
+      
+      // Reset form
+      setFormData({
+        name: '',
+        category: 'Web Exploitation',
+        points: 100,
+        min_points: 50,
+        decay: 10,
+        description: '',
+        is_dynamic: false,
+        is_whitebox: false
+      });
+      setInstanceFile(null);
+      setSourceFile(null);
+      
+      fetchChallenges();
+    } catch (err) {
+      addToast('error', 'Gagal Menambahkan', err.response?.data?.error || err.message);
+    }
+  };
+
+  const handleDelete = async (name) => {
+    if (!window.confirm(`Apakah Anda yakin ingin menghapus challenge ${name} secara permanen?`)) return;
+    try {
+      await api.delete(`/admin/challenges/${name}`);
+      addToast('success', 'Dihapus', `Tantangan ${name} berhasil dihapus.`);
+      fetchChallenges();
+    } catch (err) {
+      addToast('error', 'Gagal Menghapus', err.response?.data?.error || err.message);
+    }
+  };
+
+  const handleToggleHide = async (name) => {
+    try {
+      await api.put(`/admin/challenges/${name}/toggle`);
+      addToast('success', 'Visibility Diubah', `Status visibilitas ${name} berhasil diubah.`);
+      fetchChallenges();
+    } catch (err) {
+      addToast('error', 'Gagal Mengubah', err.response?.data?.error || err.message);
+    }
+  };
+
+  const handleEdit = (c) => {
+    setFormData({
+      name: c.name,
+      category: c.category,
+      points: c.points,
+      min_points: c.min_points || 50,
+      decay: c.decay || 10,
+      description: c.description,
+      is_dynamic: c.is_dynamic,
+      is_whitebox: c.is_whitebox
+    });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    addToast('info', 'Mode Edit', 'Data tantangan dimuat ke form.');
+  };
+
+  if (loading) {
+    return <div style={{ padding: '2rem', textAlign: 'center' }} className="mono text-muted">MENGHUBUNGKAN KE SERVER...</div>;
+  }
+
   return (
     <div className="admin-challenges">
       <div className="admin-card">
         <h3 className="admin-card-title">Tambahkan Tantangan Baru</h3>
-        <form className="admin-form-grid-2">
+        <form className="admin-form-grid-2" onSubmit={handleSubmit}>
           <div>
             <label className="admin-label">Nama Challenge</label>
-            <input type="text" className="admin-input" placeholder="sql-injection-101" />
+            <input 
+              type="text" 
+              className="admin-input" 
+              placeholder="sql-injection-101" 
+              required
+              value={formData.name}
+              onChange={e => setFormData({...formData, name: e.target.value})}
+            />
           </div>
           <div>
             <label className="admin-label">Kategori</label>
-            <select className="admin-input" style={{ appearance: 'none' }}>
+            <select 
+              className="admin-input" 
+              style={{ appearance: 'none' }}
+              value={formData.category}
+              onChange={e => setFormData({...formData, category: e.target.value})}
+            >
               <option>Web Exploitation</option>
               <option>Binary Exploitation</option>
               <option>Cryptography</option>
               <option>Reverse Engineering</option>
+              <option>Miscellaneous</option>
             </select>
           </div>
           <div>
             <label className="admin-label">Base Points</label>
-            <input type="number" className="admin-input" defaultValue={100} />
+            <input 
+              type="number" 
+              className="admin-input" 
+              required
+              value={formData.points}
+              onChange={e => setFormData({...formData, points: e.target.value})}
+            />
           </div>
           <div>
             <label className="admin-label">Opsi Khusus</label>
             <div className="admin-checkbox-group">
               <label className="admin-checkbox-label">
-                <input type="checkbox" /> Dynamic Scoring
+                <input 
+                  type="checkbox" 
+                  checked={formData.is_dynamic}
+                  onChange={e => setFormData({...formData, is_dynamic: e.target.checked})}
+                /> Dynamic Scoring
               </label>
             </div>
           </div>
+
+          {formData.is_dynamic && (
+            <>
+              <div>
+                <label className="admin-label">Minimum Points</label>
+                <input 
+                  type="number" 
+                  className="admin-input" 
+                  required
+                  value={formData.min_points}
+                  onChange={e => setFormData({...formData, min_points: e.target.value})}
+                />
+              </div>
+              <div>
+                <label className="admin-label">Decay Rate</label>
+                <input 
+                  type="number" 
+                  className="admin-input" 
+                  required
+                  value={formData.decay}
+                  onChange={e => setFormData({...formData, decay: e.target.value})}
+                />
+              </div>
+            </>
+          )}
           
           <div className="admin-full-width">
             <label className="admin-label">Deskripsi Tantangan</label>
-            <textarea className="admin-input" rows={3} placeholder="Jelaskan sedikit tentang tantangan ini..."></textarea>
+            <textarea 
+              className="admin-input" 
+              rows={3} 
+              placeholder="Jelaskan sedikit tentang tantangan ini..."
+              required
+              value={formData.description}
+              onChange={e => setFormData({...formData, description: e.target.value})}
+            ></textarea>
           </div>
 
           <div className="admin-full-width">
@@ -97,45 +268,31 @@ export default function AdminChallenges() {
               <label className="admin-checkbox-label" style={{ color: '#10b981', fontWeight: 'bold' }}>
                 <input 
                   type="checkbox" 
-                  checked={isWhitebox} 
-                  onChange={(e) => setIsWhitebox(e.target.checked)} 
-                /> Jadikan Tantangan Whitebox (Source Code Terbuka)
+                  checked={formData.is_whitebox} 
+                  onChange={(e) => setFormData({...formData, is_whitebox: e.target.checked})} 
+                /> 
+                [Opsional] Sediakan File Unduhan Untuk Peserta (Whitebox)
               </label>
+              <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '0.5rem', marginLeft: '1.5rem' }}>
+                Jika dicentang, pemain dapat mengunduh *source code* (misal `.zip` atau `.c`) saat melihat soal ini.
+              </p>
             </div>
-
-            {isWhitebox && (
-              <div className="admin-form-grid-2">
-                <div>
-                  <label className="admin-label" style={{ fontSize: '0.75rem' }}>URL Download Eksternal (Opsional, cth: GDrive)</label>
-                  <input type="text" className="admin-input" placeholder="https://..." />
-                </div>
-                <div>
-                  <label className="admin-label" style={{ fontSize: '0.75rem' }}>ATAU Upload File Source Code (.zip)</label>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                    <input 
-                      type="file" 
-                      id="source-upload" 
-                      style={{ display: 'none' }} 
-                      onChange={(e) => setSourceFile(e.target.files[0])}
-                    />
-                    <button 
-                      type="button" 
-                      onClick={() => document.getElementById('source-upload').click()}
-                      style={{ background: 'rgba(16, 185, 129, 0.1)', color: '#10b981', border: '1px solid #10b981', padding: '0.5rem 1rem', borderRadius: '4px', cursor: 'pointer', fontFamily: 'monospace' }}
-                    >
-                      Pilih File
-                    </button>
-                    <span className="mono" style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                      {sourceFile ? sourceFile.name : 'No file chosen'}
-                    </span>
-                  </div>
-                </div>
+            
+            {formData.is_whitebox && (
+              <div>
+                <label className="admin-label">Upload File Sumber (*Source Code*)</label>
+                <input 
+                  type="file" 
+                  className="admin-input" 
+                  style={{ padding: '0.5rem' }} 
+                  onChange={(e) => setSourceFile(e.target.files[0])}
+                />
               </div>
             )}
           </div>
-          
-          <div className="admin-full-width">
-            <button type="button" className="btn-admin-action btn-full">UPLOAD & BUILD IMAGE 🚀</button>
+
+          <div className="admin-full-width" style={{ marginTop: '1rem' }}>
+            <button type="submit" className="btn-admin-action btn-full">UPLOAD & SIMPAN TANTANGAN 🚀</button>
           </div>
         </form>
       </div>
@@ -146,34 +303,55 @@ export default function AdminChallenges() {
           <table className="admin-table">
             <thead>
               <tr>
-                <th>ID</th>
                 <th>Nama</th>
                 <th>Kategori</th>
-                <th>Poin</th>
+                <th>Tipe</th>
+                <th>Points</th>
+                <th>Status</th>
                 <th style={{ textAlign: 'right' }}>Aksi</th>
               </tr>
             </thead>
             <tbody>
-              <tr>
-                <td className="mono text-muted">#1</td>
-                <td><strong>sql-injection-101</strong></td>
-                <td style={{ color: 'var(--accent-cyan)' }}>Web</td>
-                <td className="mono text-magenta">100 pts</td>
-                <td className="admin-table-actions">
-                  <button className="btn-admin-action btn-warning btn-sm">EDIT</button>
-                  <button className="btn-admin-action btn-sm">DELETE</button>
-                </td>
-              </tr>
-              <tr style={{ opacity: 0.5 }}>
-                <td className="mono text-muted">#2</td>
-                <td><strong>buffer-overflow</strong> <span className="admin-badge admin-badge-red">DISABLED</span></td>
-                <td style={{ color: 'var(--accent-cyan)' }}>Pwn</td>
-                <td className="mono text-magenta">200 pts</td>
-                <td className="admin-table-actions">
-                  <button className="btn-admin-action btn-warning btn-sm">EDIT</button>
-                  <button className="btn-admin-action btn-sm">DELETE</button>
-                </td>
-              </tr>
+              {challenges.length === 0 ? (
+                <tr><td colSpan="6" className="text-center text-muted py-4">Belum ada tantangan</td></tr>
+              ) : challenges.map(c => (
+                <tr key={c.id} style={{ opacity: c.is_hidden ? 0.5 : 1 }}>
+                  <td><strong>{c.name}</strong></td>
+                  <td className="text-cyan">{c.category}</td>
+                  <td>{c.is_whitebox ? 'Whitebox' : 'Blackbox'}</td>
+                  <td className="mono">{c.points}</td>
+                  <td>
+                    {c.is_hidden ? (
+                      <span className="text-red font-bold">HIDDEN</span>
+                    ) : (
+                      <span className="text-emerald">PUBLIC</span>
+                    )}
+                  </td>
+                  <td style={{ textAlign: 'right', display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
+                    <button 
+                      className="btn-admin-action" 
+                      style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem' }}
+                      onClick={() => handleToggleHide(c.name)}
+                    >
+                      {c.is_hidden ? 'UNHIDE' : 'HIDE'}
+                    </button>
+                    <button 
+                      className="btn-admin-action" 
+                      style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem', borderColor: 'var(--accent-cyan)', color: 'var(--accent-cyan)' }}
+                      onClick={() => handleEdit(c)}
+                    >
+                      EDIT
+                    </button>
+                    <button 
+                      className="btn-admin-action" 
+                      style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem', borderColor: 'var(--admin-red)', color: 'var(--admin-red)' }}
+                      onClick={() => handleDelete(c.name)}
+                    >
+                      DELETE
+                    </button>
+                  </td>
+                </tr>
+              ))}
             </tbody>
           </table>
         </div>

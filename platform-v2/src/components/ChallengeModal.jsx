@@ -12,6 +12,8 @@ export default function ChallengeModal({ challenge, onClose, onRefresh }) {
   if (!challenge) return null;
 
   const isRunning = challenge.status === 'running';
+  const backendUrl = (api.defaults.baseURL || 'http://localhost:8000').replace(/\/api\/v2\/?$/, '');
+  const fullDownloadUrl = challenge.download_url ? `${backendUrl}${challenge.download_url}` : null;
 
   useEffect(() => {
     let timer;
@@ -137,12 +139,6 @@ export default function ChallengeModal({ challenge, onClose, onRefresh }) {
                   <button className="btn btn-action btn-extend" onClick={() => handleAction('extend')} disabled={loading}>Tambah 5 Menit</button>
                   <button className="btn btn-action btn-reset" onClick={() => handleAction('reset')} disabled={loading}>Reset Factory</button>
                   <button className="btn btn-action btn-stop" onClick={() => handleAction('stop')} disabled={loading}>Hentikan Instance</button>
-                  
-                  {challenge.is_whitebox && challenge.download_url && (
-                    <a href={challenge.download_url} target="_blank" rel="noreferrer" className="btn btn-action btn-download" style={{ gridColumn: '1 / -1', textAlign: 'center', marginTop: '0.5rem', textDecoration: 'none' }}>
-                      Download Source Code
-                    </a>
-                  )}
                 </div>
               </>
             ) : (
@@ -152,6 +148,12 @@ export default function ChallengeModal({ challenge, onClose, onRefresh }) {
                   {loading ? 'Starting...' : 'Mulai Instance'}
                 </button>
               </>
+            )}
+
+            {challenge.is_whitebox && fullDownloadUrl && (
+              <a href={fullDownloadUrl} target="_blank" rel="noreferrer" className="btn btn-primary" style={{ width: '100%', marginTop: '1rem', textDecoration: 'none', background: 'var(--accent-cyan)', color: '#000', fontWeight: 'bold' }}>
+                Download Source Code
+              </a>
             )}
           </div>
 

@@ -107,14 +107,14 @@ def api_challenges():
     
     try:
         if g.user['is_admin']:
-            rows = conn.execute('SELECT id, name, description, category, base_points, is_hidden, is_dynamic, is_whitebox, download_url FROM challenges').fetchall()
+            rows = conn.execute('SELECT id, name, description, category, base_points, is_hidden, is_dynamic, is_whitebox, download_url, min_points, decay FROM challenges').fetchall()
         else:
-            rows = conn.execute('SELECT id, name, description, category, base_points, is_hidden, is_dynamic, is_whitebox, download_url FROM challenges WHERE is_hidden = 0').fetchall()
+            rows = conn.execute('SELECT id, name, description, category, base_points, is_hidden, is_dynamic, is_whitebox, download_url, min_points, decay FROM challenges WHERE is_hidden = 0').fetchall()
     except sqlite3.OperationalError:
         if g.user['is_admin']:
-            rows = conn.execute('SELECT id, name, description, category, base_points, is_hidden, 0 as is_dynamic, 0 as is_whitebox, "" as download_url FROM challenges').fetchall()
+            rows = conn.execute('SELECT id, name, description, category, base_points, is_hidden, 0 as is_dynamic, 0 as is_whitebox, "" as download_url, 50 as min_points, 10 as decay FROM challenges').fetchall()
         else:
-            rows = conn.execute('SELECT id, name, description, category, base_points, is_hidden, 0 as is_dynamic, 0 as is_whitebox, "" as download_url FROM challenges WHERE is_hidden = 0').fetchall()
+            rows = conn.execute('SELECT id, name, description, category, base_points, is_hidden, 0 as is_dynamic, 0 as is_whitebox, "" as download_url, 50 as min_points, 10 as decay FROM challenges WHERE is_hidden = 0').fetchall()
     
     host = os.environ.get('CTF_HOST', 'localhost')
     chal_list = []
@@ -131,6 +131,8 @@ def api_challenges():
             "is_hidden": bool(row['is_hidden']),
             "is_whitebox": bool(row['is_whitebox']),
             "download_url": row['download_url'] if row['download_url'] else "",
+            "min_points": row['min_points'],
+            "decay": row['decay'],
             "instance": {
                 "status": "stopped"
             }

@@ -50,7 +50,9 @@ def init_db():
                 is_hidden BOOLEAN DEFAULT 0,
                 is_dynamic BOOLEAN DEFAULT 0,
                 is_whitebox BOOLEAN DEFAULT 0,
-                download_url TEXT
+                download_url TEXT,
+                min_points INTEGER DEFAULT 50,
+                decay INTEGER DEFAULT 10
             );
             CREATE TABLE IF NOT EXISTS notifications (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,

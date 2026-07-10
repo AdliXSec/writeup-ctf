@@ -6,14 +6,19 @@ echo -e "\033[1;33mWARNING: This will DESTROY all databases, users, scores, and 
 echo -e "\033[1;33mPress Ctrl+C to cancel, or wait 5 seconds to proceed...\033[0m"
 sleep 5
 
-echo -e "\033[0;36m[1/2] Destroying Instance Manager & Challenges state...\033[0m"
+echo -e "\033[1;36m[1/3] Destroying Instance Manager & Challenges state...\033[0m"
 cd challenge || exit 1
 docker compose down -v
 rm -f .env
 cd ..
 
-echo -e "\033[0;36m[2/2] Destroying Platform Scoreboard database...\033[0m"
+echo -e "\033[1;36m[2/3] Destroying Platform Scoreboard database...\033[0m"
 cd platform || exit 1
+docker compose down -v
+cd ..
+
+echo -e "\033[1;36m[3/3] Destroying React Frontend state...\033[0m"
+cd platform-v2 || exit 1
 docker compose down -v
 cd ..
 

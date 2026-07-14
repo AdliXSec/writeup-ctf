@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import api from '../utils/api';
 import './Scoreboard.css';
 
@@ -24,6 +25,8 @@ export default function Scoreboard() {
         rank: item.rank,
         team: item.team,
         score: item.total,
+        country: item.country || '-',
+        affiliation: item.affiliation || '-',
         avatar: "💻" // Generic avatar for now
       }));
       setLeaderboard(formatted);
@@ -53,7 +56,12 @@ export default function Scoreboard() {
           {top3.length > 1 && (
             <div className="podium-item rank-2 glass-panel">
               <div className="avatar">{top3[1].avatar}</div>
-              <div className="team-name text-cyan">{top3[1].team}</div>
+              <div className="team-name text-cyan">
+                <Link to={`/player/${top3[1].team}`} style={{ color: 'inherit', textDecoration: 'none' }}>
+                  {top3[1].team}
+                </Link>
+              </div>
+              <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{top3[1].country} • {top3[1].affiliation}</div>
               <div className="score mono">{top3[1].score}</div>
               <div className="podium-base base-silver">2nd</div>
             </div>
@@ -63,7 +71,12 @@ export default function Scoreboard() {
           <div className="podium-item rank-1 glass-panel">
             <div className="crown">👑</div>
             <div className="avatar">{top3[0].avatar}</div>
-            <div className="team-name text-magenta">{top3[0].team}</div>
+            <div className="team-name text-magenta">
+              <Link to={`/player/${top3[0].team}`} style={{ color: 'inherit', textDecoration: 'none' }}>
+                {top3[0].team}
+              </Link>
+            </div>
+            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{top3[0].country} • {top3[0].affiliation}</div>
             <div className="score mono">{top3[0].score}</div>
             <div className="podium-base base-gold">1st</div>
           </div>
@@ -72,7 +85,12 @@ export default function Scoreboard() {
           {top3.length > 2 && (
             <div className="podium-item rank-3 glass-panel">
               <div className="avatar">{top3[2].avatar}</div>
-              <div className="team-name text-cyan">{top3[2].team}</div>
+              <div className="team-name text-cyan">
+                <Link to={`/player/${top3[2].team}`} style={{ color: 'inherit', textDecoration: 'none' }}>
+                  {top3[2].team}
+                </Link>
+              </div>
+              <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{top3[2].country} • {top3[2].affiliation}</div>
               <div className="score mono">{top3[2].score}</div>
               <div className="podium-base base-bronze">3rd</div>
             </div>
@@ -91,6 +109,8 @@ export default function Scoreboard() {
             <tr>
               <th>Rank</th>
               <th>Team</th>
+              <th>Country</th>
+              <th>Affiliation</th>
               <th className="text-right">Score</th>
             </tr>
           </thead>
@@ -100,9 +120,13 @@ export default function Scoreboard() {
                 <td className="mono text-muted">#{team.rank}</td>
                 <td>
                   <span className="team-avatar">{team.avatar}</span>
-                  {team.team}
+                  <Link to={`/player/${team.team}`} style={{ color: 'inherit', textDecoration: 'none', fontWeight: 'bold' }} className="text-cyan">
+                    {team.team}
+                  </Link>
                 </td>
-                <td className="text-right mono text-cyan">{team.score}</td>
+                <td>{team.country}</td>
+                <td>{team.affiliation}</td>
+                <td className="text-right mono font-bold text-magenta">{team.score}</td>
               </tr>
             ))}
           </tbody>

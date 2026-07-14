@@ -74,8 +74,12 @@ def api_admin_stats():
 @admin_required
 def api_admin_users():
     conn = get_db()
-    users = conn.execute("SELECT id, username, is_admin, is_banned FROM users").fetchall()
-    res = [{"id": u["id"], "username": u["username"], "is_admin": bool(u["is_admin"]), "is_banned": bool(u["is_banned"])} for u in users]
+    try:
+        users = conn.execute("SELECT id, username, is_admin, is_banned, is_hidden FROM users").fetchall()
+        res = [{"id": u["id"], "username": u["username"], "is_admin": bool(u["is_admin"]), "is_banned": bool(u["is_banned"]), "is_hidden": bool(u["is_hidden"])} for u in users]
+    except sqlite3.OperationalError:
+        users = conn.execute("SELECT id, username, is_admin, is_banned FROM users").fetchall()
+        res = [{"id": u["id"], "username": u["username"], "is_admin": bool(u["is_admin"]), "is_banned": bool(u["is_banned"]), "is_hidden": False} for u in users]
     return jsonify(res)
 
 @admin_bp.route('/users', methods=['POST'])
@@ -125,6 +129,24 @@ def api_admin_toggle_ban(user_id):
             pass
             
     return jsonify({"status": "success", "is_banned": new_status})
+
+@admin_bp.route('/users/<int:user_id>/toggle-hide', methods=['PUT'])
+@admin_required
+def api_admin_toggle_hide(user_id):
+    conn = get_db()
+    try:
+        user = conn.execute("SELECT is_hidden, is_admin FROM users WHERE id = ?", (user_id,)).fetchone()
+        if not user:
+            return jsonify({"error": "User not found"}), 404
+        if user['is_admin']:
+            return jsonify({"error": "Cannot hide admin"}), 400
+            
+        new_status = 0 if user['is_hidden'] else 1
+        conn.execute("UPDATE users SET is_hidden = ? WHERE id = ?", (new_status, user_id))
+        conn.commit()
+        return jsonify({"status": "success", "is_hidden": new_status})
+    except sqlite3.OperationalError:
+        return jsonify({"error": "Migration not applied yet"}), 500
 
 @admin_bp.route('/challenges', methods=['POST'])
 @admin_required

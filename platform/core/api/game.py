@@ -190,7 +190,10 @@ def api_scoreboard():
     conn = get_db()
     scores = get_challenge_scores(conn)
     
-    users = conn.execute('SELECT id, username FROM users WHERE is_admin = 0 AND is_banned = 0').fetchall()
+    try:
+        users = conn.execute('SELECT id, username, country, affiliation FROM users WHERE is_admin = 0 AND is_banned = 0 AND is_hidden = 0').fetchall()
+    except sqlite3.OperationalError:
+        users = conn.execute('SELECT id, username, country, affiliation FROM users WHERE is_admin = 0 AND is_banned = 0').fetchall()
     settings = conn.execute("SELECT freeze_time FROM game_settings WHERE id = 1").fetchone()
     
     if settings and settings['freeze_time']:
@@ -198,7 +201,7 @@ def api_scoreboard():
     else:
         solves = conn.execute('SELECT user_id, challenge_id, blood_tier FROM solves').fetchall()
     
-    user_scores = {u['id']: {"username": u['username'], "score": 0} for u in users}
+    user_scores = {u['id']: {"username": u['username'], "country": u['country'], "affiliation": u['affiliation'], "score": 0} for u in users}
     
     for solve in solves:
         uid = solve['user_id']
@@ -227,6 +230,8 @@ def api_scoreboard():
                 "defense": 0,
                 "sla": 0,
                 "total": user_info['score'],
+                "country": user_info['country'],
+                "affiliation": user_info['affiliation'],
                 "delta": "+0"
             })
             rank += 1
@@ -395,3 +400,73 @@ def api_notifications():
             "created_at": r["created_at"]
         })
     return jsonify(res)
+
+@game_bp.route('/users/<username>', methods=['GET'])
+def api_public_profile(username):
+    conn = get_db()
+    try:
+        user = conn.execute("SELECT id, username, country, affiliation, website, is_hidden, is_banned, is_admin FROM users WHERE username = ?", (username,)).fetchone()
+    except sqlite3.OperationalError:
+        user = conn.execute("SELECT id, username, country, affiliation, website, 0 as is_hidden, is_banned, is_admin FROM users WHERE username = ?", (username,)).fetchone()
+        
+    if not user:
+        return jsonify({"error": "User not found"}), 404
+        
+    # If hidden or banned, return 404 (unless requester is admin? Just return 404 for simplicity as per requirements)
+    if user['is_hidden'] or user['is_banned'] or user['is_admin']:
+        return jsonify({"error": "User not found"}), 404
+        
+    uid = user['id']
+    
+    # Get scoreboard to find rank and score
+    # We can just fetch the json from api_scoreboard
+    scoreboard_res = api_scoreboard()
+    import json
+    scoreboard_data = json.loads(scoreboard_res.get_data(as_text=True))
+    
+    rank = "-"
+    score = 0
+    for entry in scoreboard_data:
+        if entry['team'] == username:
+            rank = entry['rank']
+            score = entry['total']
+            break
+            
+    # Get solves
+    solves_query = '''
+        SELECT s.challenge_id, s.solved_at, s.is_first_blood, s.blood_tier
+        FROM solves s
+        WHERE s.user_id = ?
+        ORDER BY s.solved_at DESC
+    '''
+    solves = conn.execute(solves_query, (uid,)).fetchall()
+    
+    scores = get_challenge_scores(conn)
+    
+    solve_list = []
+    for s in solves:
+        chal = s['challenge_id']
+        pts = scores.get(chal, 0)
+        # Add blood bonuses
+        b_tier = s['blood_tier']
+        if b_tier == 1: pts += 50
+        elif b_tier == 2: pts += 30
+        elif b_tier == 3: pts += 10
+        
+        solve_list.append({
+            "challenge": chal,
+            "points": pts,
+            "solved_at": s['solved_at'],
+            "is_first_blood": bool(s['is_first_blood']),
+            "blood_tier": b_tier
+        })
+        
+    return jsonify({
+        "username": user['username'],
+        "country": user['country'],
+        "affiliation": user['affiliation'],
+        "website": user['website'],
+        "rank": rank,
+        "score": score,
+        "solves": solve_list
+    })

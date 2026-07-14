@@ -28,7 +28,8 @@ def init_db():
                 country TEXT,
                 password TEXT NOT NULL,
                 is_admin BOOLEAN DEFAULT 0,
-                is_banned BOOLEAN DEFAULT 0
+                is_banned BOOLEAN DEFAULT 0,
+                is_hidden BOOLEAN DEFAULT 0
             );
             CREATE TABLE IF NOT EXISTS solves (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -80,7 +81,8 @@ def init_db():
         "ALTER TABLE solves ADD COLUMN is_first_blood BOOLEAN DEFAULT 0",
         "ALTER TABLE solves ADD COLUMN blood_tier INTEGER DEFAULT 0",
         "ALTER TABLE challenges ADD COLUMN is_whitebox BOOLEAN DEFAULT 0",
-        "ALTER TABLE challenges ADD COLUMN download_url TEXT"
+        "ALTER TABLE challenges ADD COLUMN download_url TEXT",
+        "ALTER TABLE users ADD COLUMN is_hidden BOOLEAN DEFAULT 0"
     ]
     for mig in migrations:
         try:

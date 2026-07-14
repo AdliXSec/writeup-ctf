@@ -34,6 +34,7 @@ import Notifications from './pages/Notifications';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Profile from './pages/Profile';
+import PublicProfile from './pages/PublicProfile';
 import AdminLayout from './layouts/AdminLayout';
 import AdminOverview from './pages/admin/AdminOverview';
 import AdminChallenges from './pages/admin/AdminChallenges';
@@ -163,6 +164,7 @@ function AppContent() {
           <Route path="/status" element={<Status />} />
           <Route path="/notifications" element={<Notifications />} />
           <Route path="/profile" element={<Profile />} />
+          <Route path="/player/:username" element={<PublicProfile />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
         </Routes>

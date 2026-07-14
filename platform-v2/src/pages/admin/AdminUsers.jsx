@@ -72,6 +72,20 @@ export default function AdminUsers() {
     }
   };
 
+  const handleToggleHide = async (userId) => {
+    try {
+      const res = await api.put(`/admin/users/${userId}/toggle-hide`);
+      addToast(
+        res.data.is_hidden === 1 ? 'warning' : 'success', 
+        res.data.is_hidden === 1 ? 'Hidden' : 'Visible', 
+        `Visibilitas pengguna berhasil diubah.`
+      );
+      fetchData();
+    } catch (err) {
+      addToast('error', 'Gagal', err.response?.data?.error || err.message);
+    }
+  };
+
   const handleDeleteUser = async (userId, username) => {
     if (!window.confirm(`Yakin ingin MENGHAPUS permanen pengguna ${username}? Semua riwayat solve dan skornya akan hilang.`)) {
       return;
@@ -189,6 +203,8 @@ export default function AdminUsers() {
                   <td>
                     {u.is_banned ? (
                       <span className="text-red font-bold">BANNED</span>
+                    ) : u.is_hidden ? (
+                      <span className="text-yellow font-bold">HIDDEN</span>
                     ) : (
                       <span className="text-emerald">ACTIVE</span>
                     )}
@@ -196,6 +212,14 @@ export default function AdminUsers() {
                   <td style={{ textAlign: 'right' }}>
                     {!u.is_admin && (
                       <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
+                        <button 
+                          className="btn-admin-action" 
+                          style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem', borderColor: u.is_hidden ? 'var(--accent-emerald)' : 'var(--admin-cyan)', color: u.is_hidden ? 'var(--accent-emerald)' : 'var(--admin-cyan)' }}
+                          onClick={() => handleToggleHide(u.id)}
+                        >
+                          {u.is_hidden ? 'UNHIDE' : 'HIDE'}
+                        </button>
+                        
                         <button 
                           className="btn-admin-action" 
                           style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem', borderColor: u.is_banned ? 'var(--accent-emerald)' : 'var(--admin-yellow)', color: u.is_banned ? 'var(--accent-emerald)' : 'var(--admin-yellow)' }}

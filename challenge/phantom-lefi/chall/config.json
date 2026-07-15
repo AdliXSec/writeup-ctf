@@ -1,5 +1,5 @@
 {
-    "name": "phantom-script",
+    "name": "phantom-lefi",
     "internal_port": 80,
     "flag_desc": "iconv_lfi_bypass",
     "tmpfs": {"/tmp": "", "/run": ""},

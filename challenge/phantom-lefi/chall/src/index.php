@@ -38,11 +38,7 @@ $file_to_include = $page . '.php';
         </nav>
         <div class="content">
             <?php
-                if (!file_exists($file_to_include)) {
-                    echo "Error: The requested component could not be loaded.";
-                } else {
-                    include($file_to_include);
-                }
+                @include($file_to_include);
             ?>
         </div>
     </div>

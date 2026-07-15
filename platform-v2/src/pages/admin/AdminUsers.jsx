@@ -147,18 +147,22 @@ export default function AdminUsers() {
                 <th>Challenge</th>
                 <th>Port</th>
                 <th>Kedaluwarsa</th>
+                <th>CPU</th>
+                <th>RAM</th>
                 <th style={{ textAlign: 'right' }}>Aksi</th>
               </tr>
             </thead>
             <tbody>
               {instances.length === 0 ? (
-                <tr><td colSpan="5" className="text-center text-muted py-4">Tidak ada instance yang berjalan</td></tr>
+                <tr><td colSpan="7" className="text-center text-muted py-4">Tidak ada instance yang berjalan</td></tr>
               ) : instances.map((inst, idx) => (
                 <tr key={idx}>
                   <td><strong>{inst.username || `User #${inst.team_id}`}</strong></td>
                   <td style={{ color: 'var(--accent-cyan)' }}>{inst.challenge}</td>
                   <td className="mono text-magenta">{inst.port}</td>
                   <td className="mono" style={{ color: '#10b981' }}>{new Date(inst.expires_at).toLocaleTimeString()}</td>
+                  <td className="mono" style={{ color: 'var(--admin-yellow)' }}>{inst.cpu || 'N/A'}</td>
+                  <td className="mono" style={{ color: 'var(--accent-cyan)' }}>{inst.mem || 'N/A'}</td>
                   <td style={{ textAlign: 'right' }}>
                     <button 
                       className="btn-admin-action" 

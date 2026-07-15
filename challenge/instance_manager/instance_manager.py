@@ -16,6 +16,7 @@ import json
 import zipfile
 import shutil
 # Configuration
+import subprocess
 # ---------------------------------------------------------------------------
 app = Flask(__name__)
 DATA_DIR = os.environ.get("DATA_DIR", "/data")
@@ -189,7 +190,8 @@ def get_challenge_config(challenge_name):
         "flag_desc": row["flag_desc"],
         "tmpfs": json.loads(row["tmpfs"]) if row["tmpfs"] else {},
         "command": json.loads(row["command"]) if row["command"] else None,
-        "env_extra": json.loads(row["env_extra"]) if row["env_extra"] else {}
+        "env_extra": json.loads(row["env_extra"]) if row["env_extra"] else {},
+        "read_only": bool(row["read_only"]) if "read_only" in row.keys() else True
     }
 
 # ---------------------------------------------------------------------------
@@ -228,9 +230,17 @@ def init_db():
             flag_desc TEXT,
             tmpfs TEXT,
             command TEXT,
-            env_extra TEXT
+            env_extra TEXT,
+            read_only BOOLEAN DEFAULT 1
         );
     """)
+    
+    # Ensure read_only column exists for backward compatibility
+    try:
+        conn.execute("ALTER TABLE challenge_configs ADD COLUMN read_only BOOLEAN DEFAULT 1")
+    except sqlite3.OperationalError:
+        pass
+
     
     # Seed challenge_configs if empty
     row = conn.execute("SELECT COUNT(*) as c FROM challenge_configs").fetchone()
@@ -238,8 +248,8 @@ def init_db():
         log.info("Seeding challenge_configs table from hardcoded list...")
         for c in CHALLENGES:
             conn.execute('''
-                INSERT INTO challenge_configs (name, image, internal_port, offset, flag_desc, tmpfs, command, env_extra)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                INSERT INTO challenge_configs (name, image, internal_port, offset, flag_desc, tmpfs, command, env_extra, read_only)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1)
             ''', (
                 c["name"], c["image"], c["internal_port"], c["offset"], c["flag_desc"],
                 json.dumps(c["tmpfs"]) if c.get("tmpfs") else None,
@@ -346,7 +356,7 @@ def start_challenge_instance(team_id, challenge_name):
         image=chal["image"],
         name=name,
         detach=True,
-        read_only=True,
+        read_only=chal.get("read_only", True),
         tmpfs=chal["tmpfs"],
         ports=port_binding,
         environment=env,
@@ -539,13 +549,34 @@ def api_get_all_instances():
     ).fetchall()
     conn.close()
     
+    # Fetch stats
+    stats_dict = {}
+    try:
+        r = subprocess.run(
+            ['docker', 'stats', '--no-stream', '--format', '{{.Name}}|{{.CPUPerc}}|{{.MemUsage}}'], 
+            capture_output=True, text=True, timeout=5
+        )
+        for line in r.stdout.strip().split('\n'):
+            if '|' in line:
+                cname, cpu, mem = line.split('|', 2)
+                # mem is like "4.902MiB / 2.771GiB"
+                mem_used = mem.split(' / ')[0].strip() if ' / ' in mem else mem.strip()
+                stats_dict[cname.strip()] = {"cpu": cpu.strip(), "mem": mem_used}
+    except Exception as e:
+        log.error("Failed to fetch docker stats: " + str(e))
+
     res = []
     for r in rows:
+        cname = container_name(r["challenge"], r["team_id"])
+        c_stats = stats_dict.get(cname, {"cpu": "N/A", "mem": "N/A"})
+        
         res.append({
             "team_id": r["team_id"],
             "challenge": r["challenge"],
             "port": r["host_port"],
-            "expires_at": r["expires_at"]
+            "expires_at": r["expires_at"],
+            "cpu": c_stats["cpu"],
+            "mem": c_stats["mem"]
         })
     return jsonify({"instances": res})
 
@@ -660,13 +691,14 @@ def api_admin_build():
         if existing:
             conn.execute('''
                 UPDATE challenge_configs 
-                SET image=?, internal_port=?, flag_desc=?, tmpfs=?, command=?, env_extra=?
+                SET image=?, internal_port=?, flag_desc=?, tmpfs=?, command=?, env_extra=?, read_only=?
                 WHERE name=?
             ''', (
                 f"ctf-{name}", config.get("internal_port", 80), config.get("flag_desc", f"{name}_flag"),
                 json.dumps(config.get("tmpfs")) if config.get("tmpfs") else None,
                 json.dumps(config.get("command")) if config.get("command") else None,
                 json.dumps(config.get("env_extra")) if config.get("env_extra") else None,
+                bool(config.get("read_only", True)),
                 name
             ))
         else:
@@ -674,13 +706,14 @@ def api_admin_build():
             next_offset = (max_offset_row["m"] or 0) + 1
             
             conn.execute('''
-                INSERT INTO challenge_configs (name, image, internal_port, offset, flag_desc, tmpfs, command, env_extra)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                INSERT INTO challenge_configs (name, image, internal_port, offset, flag_desc, tmpfs, command, env_extra, read_only)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
             ''', (
                 name, f"ctf-{name}", config.get("internal_port", 80), next_offset, config.get("flag_desc", f"{name}_flag"),
                 json.dumps(config.get("tmpfs")) if config.get("tmpfs") else None,
                 json.dumps(config.get("command")) if config.get("command") else None,
-                json.dumps(config.get("env_extra")) if config.get("env_extra") else None
+                json.dumps(config.get("env_extra")) if config.get("env_extra") else None,
+                bool(config.get("read_only", True))
             ))
         conn.commit()
         conn.close()

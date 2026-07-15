@@ -1,0 +1,9 @@
+{
+    "name": "misc-ssh",
+    "internal_port": 22,
+    "flag_desc": "ssh_login_success",
+    "read_only": false,
+    "tmpfs": {"/tmp": "", "/run": ""},
+    "command": ["/bin/sh", "/app/start.sh"],
+    "env_extra": {}
+}

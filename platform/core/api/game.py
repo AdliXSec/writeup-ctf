@@ -334,6 +334,12 @@ def api_submit():
             chal_match = (provided_chal_id == real_chal_name) if provided_chal_id else True
             
             if owner_team_id == submitter_team_id and chal_match:
+                # If admin, just accept it as a test without recording solve or blood
+                if g.user['is_admin']:
+                    results.append({"challenge_id": real_chal_name, "status": "accepted", "message": "Flag correct! (Admin Test)"})
+                    accepted += 1
+                    continue
+                    
                 # Check for blood tier
                 solve_count = conn.execute("SELECT COUNT(*) FROM solves WHERE challenge_id = ?", (real_chal_name,)).fetchone()[0]
                 blood_tier = (solve_count + 1) if solve_count < 3 else 0

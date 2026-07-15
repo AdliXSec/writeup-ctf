@@ -8,6 +8,7 @@ export default function AdminChallenges() {
   const [challenges, setChallenges] = useState([]);
   const [loading, setLoading] = useState(true);
   const [dragActive, setDragActive] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
   
   const [formData, setFormData] = useState({
     name: '',
@@ -94,6 +95,7 @@ export default function AdminChallenges() {
       });
       setInstanceFile(null);
       setSourceFile(null);
+      setIsEditing(false);
       
       fetchChallenges();
     } catch (err) {
@@ -133,8 +135,25 @@ export default function AdminChallenges() {
       is_dynamic: c.is_dynamic,
       is_whitebox: c.is_whitebox
     });
+    setIsEditing(true);
     window.scrollTo({ top: 0, behavior: 'smooth' });
     addToast('info', 'Mode Edit', 'Data tantangan dimuat ke form.');
+  };
+
+  const handleCancelEdit = () => {
+    setFormData({
+      name: '',
+      category: 'Web Exploitation',
+      points: 100,
+      min_points: 50,
+      decay: 10,
+      description: '',
+      is_dynamic: false,
+      is_whitebox: false
+    });
+    setInstanceFile(null);
+    setSourceFile(null);
+    setIsEditing(false);
   };
 
   if (loading) {
@@ -155,7 +174,10 @@ export default function AdminChallenges() {
               required
               value={formData.name}
               onChange={e => setFormData({...formData, name: e.target.value})}
+              disabled={isEditing}
+              style={isEditing ? { opacity: 0.6, cursor: 'not-allowed' } : {}}
             />
+            {isEditing && <small className="text-muted" style={{display: 'block', marginTop: '5px'}}>Nama challenge tidak dapat diubah saat mode edit.</small>}
           </div>
           <div>
             <label className="admin-label">Kategori</label>
@@ -291,8 +313,15 @@ export default function AdminChallenges() {
             )}
           </div>
 
-          <div className="admin-full-width" style={{ marginTop: '1rem' }}>
-            <button type="submit" className="btn-admin-action btn-full">UPLOAD & SIMPAN TANTANGAN 🚀</button>
+          <div className="admin-full-width" style={{ marginTop: '1rem', display: 'flex', gap: '1rem' }}>
+            <button type="submit" className="btn-admin-action btn-full">
+              {isEditing ? "SIMPAN PERUBAHAN 💾" : "UPLOAD & SIMPAN TANTANGAN 🚀"}
+            </button>
+            {isEditing && (
+              <button type="button" className="btn-admin-action btn-full" style={{ background: '#333' }} onClick={handleCancelEdit}>
+                BATAL EDIT ✖
+              </button>
+            )}
           </div>
         </form>
       </div>

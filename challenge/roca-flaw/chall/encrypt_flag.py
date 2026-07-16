@@ -2,7 +2,7 @@
 """Encrypts the dynamic FLAG using the pre-generated ROCA-vulnerable RSA public key."""
 import os, sys
 
-n = 8383563399034779675950137948139847939656117009498004903188576719681200549222277491864599827396751044403783108081540876451186011645338509989513531924181301
+n = 6305993287000949880908910029202080306103627721738758072676749624500746303763227797149872022629892375197062286413916309819582303003717038804793542545565797
 e = 65537
 
 flag = os.environ.get("FLAG", "LEEXY{test_flag}")
@@ -16,7 +16,7 @@ if flag_int >= n:
 ciphertext = pow(flag_int, e, n)
 
 # Write public key
-with open("/home/ctf/public_key.txt", "w") as f:
+with open("/tmp/public_key.txt", "w") as f:
     f.write("=== RSA Public Key (Infineon SmartCard TPM v1.3.4) ===\n")
     f.write(f"Modulus (n):\n{hex(n)}\n\n")
     f.write(f"Public Exponent (e):\n{e}\n\n")
@@ -25,13 +25,12 @@ with open("/home/ctf/public_key.txt", "w") as f:
     f.write("Serial: INF-TPM-2017-03-15-EU\n")
 
 # Write ciphertext
-with open("/home/ctf/encrypted_flag.txt", "w") as f:
+with open("/tmp/encrypted_flag.txt", "w") as f:
     f.write("=== Encrypted Communication (RSA PKCS#1 v1.5) ===\n")
     f.write(f"Ciphertext (hex):\n{hex(ciphertext)}\n\n")
     f.write("Algorithm: RSA\n")
     f.write("Padding: Textbook (no padding)\n")
 
-# Set ownership
-os.system("chown ctf:ctf /home/ctf/public_key.txt /home/ctf/encrypted_flag.txt")
-os.system("chmod 444 /home/ctf/public_key.txt /home/ctf/encrypted_flag.txt")
+# Set permissions
+os.system("chmod 444 /tmp/public_key.txt /tmp/encrypted_flag.txt")
 print("[+] Flag encrypted successfully with ROCA-vulnerable key")

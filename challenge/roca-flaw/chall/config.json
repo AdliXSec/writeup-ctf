@@ -1,0 +1,8 @@
+{
+    "name": "roca-flaw",
+    "internal_port": 22,
+    "flag_desc": "roca_infineon_factor",
+    "tmpfs": {"/tmp": "", "/run": ""},
+    "command": ["/bin/sh", "/app/start.sh"],
+    "env_extra": {}
+}

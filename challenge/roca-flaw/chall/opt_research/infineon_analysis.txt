@@ -29,12 +29,12 @@ Known detection tools:
     - RsaCtfTool --attack roca
 
 ## Intercepted Key Fingerprint
-Modulus (n) = 0x78670d99519f2a33da732dd5638b2f692342d1e571bd8dc399ea5c8ce28d2aa42331f65aae035350690debd819d4fb2eddcaf697a0978b7d951b6c0cdeece865
-Bit length  = 511 bits
+Modulus (n) = 0xa05b87789aaac792d006a7a59cbfd6190c8b172d9bc0c568b4a03186b046c71927b61a3f945729212b385533cf0354df0611a90baf5be8c895b9fcd61e6ed679
+Bit length  = 512 bits
 Status      = *** VULNERABLE ***
 
 ## Factoring Difficulty
-For 511-bit ROCA keys, factoring is feasible with:
+For 512-bit ROCA keys, factoring is feasible with:
     - Standard number field sieve (minutes)
     - Coppersmith's attack (seconds)
     - Online services like factordb.com

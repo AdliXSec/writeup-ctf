@@ -4,5 +4,6 @@
     "flag_desc": "roca_infineon_factor",
     "tmpfs": {"/tmp": "", "/run": ""},
     "command": ["/bin/sh", "/app/start.sh"],
-    "env_extra": {}
+    "env_extra": {},
+    "read_only": false
 }

@@ -28,6 +28,28 @@ def check_game_active():
 @game_bp.route('/game/instances/start', methods=['POST'])
 @jwt_required
 def api_instance_start():
+    """
+    Start Challenge Instance
+    ---
+    tags:
+      - Game Instances
+    security:
+      - Bearer: []
+    parameters:
+      - in: body
+        name: body
+        required: true
+        schema:
+          type: object
+          properties:
+            challenge:
+              type: string
+    responses:
+      200:
+        description: Instance started
+      403:
+        description: Game not active
+    """
     err = check_game_active()
     if err: return err
     
@@ -47,6 +69,26 @@ def api_instance_start():
 @game_bp.route('/game/instances/stop', methods=['POST'])
 @jwt_required
 def api_instance_stop():
+    """
+    Stop Challenge Instance
+    ---
+    tags:
+      - Game Instances
+    security:
+      - Bearer: []
+    parameters:
+      - in: body
+        name: body
+        required: true
+        schema:
+          type: object
+          properties:
+            challenge:
+              type: string
+    responses:
+      200:
+        description: Instance stopped
+    """
     data = request.get_json(silent=True) or {}
     chal_name = data.get("challenge")
     resp = http_requests.post(
@@ -59,6 +101,26 @@ def api_instance_stop():
 @game_bp.route('/game/instances/extend', methods=['POST'])
 @jwt_required
 def api_instance_extend():
+    """
+    Extend Instance Time
+    ---
+    tags:
+      - Game Instances
+    security:
+      - Bearer: []
+    parameters:
+      - in: body
+        name: body
+        required: true
+        schema:
+          type: object
+          properties:
+            challenge:
+              type: string
+    responses:
+      200:
+        description: Instance time extended
+    """
     err = check_game_active()
     if err: return err
     data = request.get_json(silent=True) or {}
@@ -73,6 +135,26 @@ def api_instance_extend():
 @game_bp.route('/game/instances/reset', methods=['POST'])
 @jwt_required
 def api_instance_reset():
+    """
+    Reset Challenge Instance
+    ---
+    tags:
+      - Game Instances
+    security:
+      - Bearer: []
+    parameters:
+      - in: body
+        name: body
+        required: true
+        schema:
+          type: object
+          properties:
+            challenge:
+              type: string
+    responses:
+      200:
+        description: Instance reset
+    """
     err = check_game_active()
     if err: return err
     data = request.get_json(silent=True) or {}
@@ -92,6 +174,19 @@ def api_instance_reset():
 @game_bp.route('/challenges', methods=['GET'])
 @jwt_required
 def api_challenges():
+    """
+    List Challenges
+    ---
+    tags:
+      - Game
+    security:
+      - Bearer: []
+    responses:
+      200:
+        description: List of active challenges and instance status
+      403:
+        description: Game not started
+    """
     conn = get_db()
     settings = conn.execute("SELECT start_time FROM game_settings WHERE id = 1").fetchone()
     if settings and settings['start_time']:
@@ -150,6 +245,17 @@ def api_challenges():
 @game_bp.route('/game/status', methods=['GET'])
 @jwt_required
 def api_game_status():
+    """
+    Get Game Status
+    ---
+    tags:
+      - Game
+    security:
+      - Bearer: []
+    responses:
+      200:
+        description: Current CTF game status and timer
+    """
     conn = get_db()
     settings = conn.execute("SELECT start_time, end_time, is_paused, freeze_time FROM game_settings WHERE id = 1").fetchone()
     
@@ -187,6 +293,17 @@ def api_game_status():
 @game_bp.route('/scoreboard', methods=['GET'])
 @jwt_required
 def api_scoreboard():
+    """
+    Get Scoreboard
+    ---
+    tags:
+      - Game
+    security:
+      - Bearer: []
+    responses:
+      200:
+        description: Public scoreboard rankings
+    """
     conn = get_db()
     scores = get_challenge_scores(conn)
     
@@ -241,6 +358,17 @@ def api_scoreboard():
 @game_bp.route('/attacks', methods=['GET'])
 @jwt_required
 def api_attacks():
+    """
+    Get Attack Activity
+    ---
+    tags:
+      - Game
+    security:
+      - Bearer: []
+    responses:
+      200:
+        description: Recent solve logs
+    """
     conn = get_db()
     settings = conn.execute("SELECT freeze_time FROM game_settings WHERE id = 1").fetchone()
     if settings and settings['freeze_time']:
@@ -284,6 +412,34 @@ def api_attacks():
 @game_bp.route('/submit', methods=['POST'])
 @jwt_required
 def api_submit():
+    """
+    Submit Flags
+    ---
+    tags:
+      - Game
+    security:
+      - Bearer: []
+    parameters:
+      - in: body
+        name: body
+        required: true
+        schema:
+          type: array
+          items:
+            type: object
+            properties:
+              flag:
+                type: string
+              challenge_id:
+                type: string
+    responses:
+      200:
+        description: Submission results
+      400:
+        description: Invalid request format
+      403:
+        description: Game not active
+    """
     data = request.get_json(silent=True)
     if not isinstance(data, list):
         return jsonify({"type": "about:blank", "title": "Bad Request", "status": 400, "detail": "Expected array of flags"}), 400
@@ -394,6 +550,17 @@ def api_submit():
 @game_bp.route('/notifications', methods=['GET'])
 @jwt_required
 def api_notifications():
+    """
+    Get Notifications
+    ---
+    tags:
+      - Game
+    security:
+      - Bearer: []
+    responses:
+      200:
+        description: List of global announcements
+    """
     conn = get_db()
     rows = conn.execute("SELECT id, title, message, created_at FROM notifications ORDER BY created_at DESC").fetchall()
     
@@ -409,6 +576,22 @@ def api_notifications():
 
 @game_bp.route('/users/<username>', methods=['GET'])
 def api_public_profile(username):
+    """
+    Get Public Profile
+    ---
+    tags:
+      - Users
+    parameters:
+      - name: username
+        in: path
+        type: string
+        required: true
+    responses:
+      200:
+        description: Public user profile and solves
+      404:
+        description: User not found
+    """
     conn = get_db()
     try:
         user = conn.execute("SELECT id, username, country, affiliation, website, is_hidden, is_banned, is_admin FROM users WHERE username = ?", (username,)).fetchone()

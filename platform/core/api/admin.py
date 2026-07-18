@@ -13,6 +13,17 @@ admin_bp = Blueprint('admin_api', __name__, url_prefix='/api/v2/admin')
 @admin_bp.route('/instances', methods=['GET'])
 @admin_required
 def api_admin_instances():
+    """
+    List Running Instances (Admin)
+    ---
+    tags:
+      - Admin Instances
+    security:
+      - Bearer: []
+    responses:
+      200:
+        description: List of running containers
+    """
     try:
         resp = http_requests.get(f"{Config.INSTANCE_MANAGER_URL}/instances", timeout=10)
         im_data = resp.json()
@@ -33,6 +44,28 @@ def api_admin_instances():
 @admin_bp.route('/instances/stop', methods=['POST'])
 @admin_required
 def api_admin_stop_instance():
+    """
+    Stop Challenge Instance (Admin)
+    ---
+    tags:
+      - Admin Instances
+    security:
+      - Bearer: []
+    parameters:
+      - in: body
+        name: body
+        required: true
+        schema:
+          type: object
+          properties:
+            team_id:
+              type: integer
+            challenge:
+              type: string
+    responses:
+      200:
+        description: Instance stopped
+    """
     data = request.get_json(silent=True) or {}
     team_id = data.get('team_id')
     challenge = data.get('challenge')
@@ -54,6 +87,17 @@ def api_admin_stop_instance():
 @admin_bp.route('/stats', methods=['GET'])
 @admin_required
 def api_admin_stats():
+    """
+    Get Dashboard Stats
+    ---
+    tags:
+      - Admin Dashboard
+    security:
+      - Bearer: []
+    responses:
+      200:
+        description: System statistics
+    """
     conn = get_db()
     total_users = conn.execute("SELECT COUNT(*) FROM users").fetchone()[0]
     banned_users = conn.execute("SELECT COUNT(*) FROM users WHERE is_banned = 1").fetchone()[0]
@@ -73,6 +117,17 @@ def api_admin_stats():
 @admin_bp.route('/users', methods=['GET'])
 @admin_required
 def api_admin_users():
+    """
+    List All Users
+    ---
+    tags:
+      - Admin Users
+    security:
+      - Bearer: []
+    responses:
+      200:
+        description: List of users
+    """
     conn = get_db()
     try:
         users = conn.execute("SELECT id, username, is_admin, is_banned, is_hidden FROM users").fetchall()
@@ -85,6 +140,28 @@ def api_admin_users():
 @admin_bp.route('/users', methods=['POST'])
 @admin_required
 def api_admin_create_admin():
+    """
+    Create Admin User
+    ---
+    tags:
+      - Admin Users
+    security:
+      - Bearer: []
+    parameters:
+      - in: body
+        name: body
+        required: true
+        schema:
+          type: object
+          properties:
+            username:
+              type: string
+            password:
+              type: string
+    responses:
+      201:
+        description: Admin created
+    """
     data = request.get_json(silent=True) or {}
     username = data.get('username')
     password = data.get('password')
@@ -111,6 +188,22 @@ def api_admin_create_admin():
 @admin_bp.route('/users/<int:user_id>/ban', methods=['PUT'])
 @admin_required
 def api_admin_toggle_ban(user_id):
+    """
+    Toggle User Ban
+    ---
+    tags:
+      - Admin Users
+    security:
+      - Bearer: []
+    parameters:
+      - name: user_id
+        in: path
+        type: integer
+        required: true
+    responses:
+      200:
+        description: User ban toggled
+    """
     conn = get_db()
     user = conn.execute("SELECT is_banned, is_admin FROM users WHERE id = ?", (user_id,)).fetchone()
     if not user:
@@ -133,6 +226,22 @@ def api_admin_toggle_ban(user_id):
 @admin_bp.route('/users/<int:user_id>/toggle-hide', methods=['PUT'])
 @admin_required
 def api_admin_toggle_hide(user_id):
+    """
+    Toggle User Visibility (Hide from scoreboard)
+    ---
+    tags:
+      - Admin Users
+    security:
+      - Bearer: []
+    parameters:
+      - name: user_id
+        in: path
+        type: integer
+        required: true
+    responses:
+      200:
+        description: User visibility toggled
+    """
     conn = get_db()
     try:
         user = conn.execute("SELECT is_hidden, is_admin FROM users WHERE id = ?", (user_id,)).fetchone()
@@ -151,6 +260,33 @@ def api_admin_toggle_hide(user_id):
 @admin_bp.route('/challenges', methods=['POST'])
 @admin_required
 def api_admin_add_challenge():
+    """
+    Add or Update Challenge
+    ---
+    tags:
+      - Admin Challenges
+    security:
+      - Bearer: []
+    consumes:
+      - multipart/form-data
+    parameters:
+      - in: formData
+        name: name
+        type: string
+        required: true
+      - in: formData
+        name: description
+        type: string
+      - in: formData
+        name: category
+        type: string
+      - in: formData
+        name: points
+        type: integer
+    responses:
+      200:
+        description: Challenge created/updated
+    """
     name = request.form.get('name')
     category = request.form.get('category')
     points = request.form.get('points', type=int)
@@ -232,6 +368,22 @@ def api_admin_add_challenge():
 @admin_bp.route('/challenges/<name>', methods=['DELETE'])
 @admin_required
 def api_admin_delete_challenge(name):
+    """
+    Delete Challenge
+    ---
+    tags:
+      - Admin Challenges
+    security:
+      - Bearer: []
+    parameters:
+      - name: name
+        in: path
+        type: string
+        required: true
+    responses:
+      200:
+        description: Challenge deleted
+    """
     try:
         r = http_requests.delete(f"{Config.INSTANCE_MANAGER_URL}/admin/build/{name}", timeout=60)
         if r.status_code != 200:
@@ -251,6 +403,22 @@ def api_admin_delete_challenge(name):
 @admin_bp.route('/challenges/<name>/toggle', methods=['PUT'])
 @admin_required
 def api_admin_toggle_challenge(name):
+    """
+    Toggle Challenge Visibility
+    ---
+    tags:
+      - Admin Challenges
+    security:
+      - Bearer: []
+    parameters:
+      - name: name
+        in: path
+        type: string
+        required: true
+    responses:
+      200:
+        description: Visibility toggled
+    """
     conn = get_db()
     try:
         conn.execute("UPDATE challenges SET is_hidden = CASE WHEN is_hidden = 1 THEN 0 ELSE 1 END WHERE name = ?", (name,))
@@ -262,6 +430,28 @@ def api_admin_toggle_challenge(name):
 @admin_bp.route('/notifications', methods=['POST'])
 @admin_required
 def api_admin_add_notification():
+    """
+    Broadcast Notification
+    ---
+    tags:
+      - Admin Notifications
+    security:
+      - Bearer: []
+    parameters:
+      - in: body
+        name: body
+        required: true
+        schema:
+          type: object
+          properties:
+            title:
+              type: string
+            message:
+              type: string
+    responses:
+      200:
+        description: Notification broadcasted
+    """
     data = request.get_json(silent=True) or {}
     title = data.get('title')
     message = data.get('message')
@@ -281,6 +471,22 @@ def api_admin_add_notification():
 @admin_bp.route('/users/<int:user_id>', methods=['DELETE'])
 @admin_required
 def api_admin_delete_user(user_id):
+    """
+    Delete User
+    ---
+    tags:
+      - Admin Users
+    security:
+      - Bearer: []
+    parameters:
+      - name: user_id
+        in: path
+        type: integer
+        required: true
+    responses:
+      200:
+        description: User deleted
+    """
     conn = get_db()
     # Check if user is admin
     user = conn.execute("SELECT is_admin FROM users WHERE id = ?", (user_id,)).fetchone()
@@ -304,6 +510,22 @@ def api_admin_delete_user(user_id):
 @admin_bp.route('/notifications/<int:notif_id>', methods=['DELETE'])
 @admin_required
 def api_admin_delete_notification(notif_id):
+    """
+    Delete Notification
+    ---
+    tags:
+      - Admin Notifications
+    security:
+      - Bearer: []
+    parameters:
+      - name: notif_id
+        in: path
+        type: integer
+        required: true
+    responses:
+      200:
+        description: Notification deleted
+    """
     conn = get_db()
     try:
         conn.execute("DELETE FROM notifications WHERE id = ?", (notif_id,))
@@ -316,6 +538,17 @@ def api_admin_delete_notification(notif_id):
 @admin_bp.route('/settings', methods=['GET'])
 @admin_required
 def api_admin_get_settings():
+    """
+    Get Game Settings
+    ---
+    tags:
+      - Admin Game Settings
+    security:
+      - Bearer: []
+    responses:
+      200:
+        description: Game settings
+    """
     conn = get_db()
     row = conn.execute("SELECT start_time, end_time, is_paused, freeze_time FROM game_settings WHERE id = 1").fetchone()
     if not row:
@@ -330,6 +563,32 @@ def api_admin_get_settings():
 @admin_bp.route('/settings', methods=['PUT'])
 @admin_required
 def api_admin_update_settings():
+    """
+    Update Game Settings
+    ---
+    tags:
+      - Admin Game Settings
+    security:
+      - Bearer: []
+    parameters:
+      - in: body
+        name: body
+        required: true
+        schema:
+          type: object
+          properties:
+            start_time:
+              type: string
+            end_time:
+              type: string
+            is_paused:
+              type: boolean
+            freeze_time:
+              type: string
+    responses:
+      200:
+        description: Settings updated
+    """
     data = request.get_json(silent=True) or {}
     start_time = data.get('start_time')
     end_time = data.get('end_time')

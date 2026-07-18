@@ -12,6 +12,35 @@ auth_bp = Blueprint('auth_api', __name__, url_prefix='/api/v2')
 
 @auth_bp.route('/authenticate', methods=['POST'])
 def api_authenticate():
+    """
+    Authenticate User (Player)
+    ---
+    tags:
+      - Authentication
+    parameters:
+      - in: body
+        name: body
+        required: true
+        schema:
+          type: object
+          required:
+            - email
+            - password
+          properties:
+            email:
+              type: string
+              example: player@example.com
+            password:
+              type: string
+              example: secret
+    responses:
+      200:
+        description: Returns JWT token
+      400:
+        description: Missing email or password
+      403:
+        description: Invalid credentials or banned
+    """
     data = request.get_json(silent=True)
     if not data or 'email' not in data or 'password' not in data:
         return jsonify({"type": "about:blank", "title": "Bad Request", "status": 400, "detail": "Missing email or password"}), 400
@@ -35,6 +64,35 @@ def api_authenticate():
 
 @auth_bp.route('/admin/login', methods=['POST'])
 def api_admin_login():
+    """
+    Authenticate Admin
+    ---
+    tags:
+      - Authentication
+    parameters:
+      - in: body
+        name: body
+        required: true
+        schema:
+          type: object
+          required:
+            - username
+            - password
+          properties:
+            username:
+              type: string
+              example: admin
+            password:
+              type: string
+              example: supersecret
+    responses:
+      200:
+        description: Returns JWT token
+      400:
+        description: Missing username or password
+      403:
+        description: Invalid admin credentials
+    """
     data = request.get_json(silent=True)
     if not data or 'username' not in data or 'password' not in data:
         return jsonify({"error": "Missing username or password"}), 400
@@ -57,6 +115,19 @@ def api_admin_login():
 @auth_bp.route('/session', methods=['GET'])
 @jwt_required
 def api_session():
+    """
+    Get Current Session
+    ---
+    tags:
+      - Authentication
+    security:
+      - Bearer: []
+    responses:
+      200:
+        description: Current user profile
+      401:
+        description: Unauthorized
+    """
     user = g.user
     return jsonify({
         "id": user['id'],
@@ -70,6 +141,36 @@ def api_session():
 
 @auth_bp.route('/register', methods=['POST'])
 def api_register():
+    """
+    Register New Player
+    ---
+    tags:
+      - Authentication
+    parameters:
+      - in: body
+        name: body
+        required: true
+        schema:
+          type: object
+          required:
+            - username
+            - email
+            - password
+          properties:
+            username:
+              type: string
+            email:
+              type: string
+            password:
+              type: string
+    responses:
+      201:
+        description: User registered successfully
+      400:
+        description: Missing parameters
+      409:
+        description: Username or Email already exists
+    """
     data = request.get_json(silent=True)
     if not data or 'username' not in data or 'email' not in data or 'password' not in data:
         return jsonify({"type": "about:blank", "title": "Bad Request", "status": 400, "detail": "Missing username, email, or password"}), 400
@@ -96,6 +197,38 @@ def api_register():
 @auth_bp.route('/profile', methods=['PATCH'])
 @jwt_required
 def api_update_profile():
+    """
+    Update Player Profile
+    ---
+    tags:
+      - Authentication
+    security:
+      - Bearer: []
+    parameters:
+      - in: body
+        name: body
+        required: true
+        schema:
+          type: object
+          properties:
+            website:
+              type: string
+            affiliation:
+              type: string
+            country:
+              type: string
+            username:
+              type: string
+            password:
+              type: string
+    responses:
+      200:
+        description: Profile updated successfully
+      401:
+        description: Unauthorized
+      409:
+        description: Username already in use
+    """
     data = request.get_json(silent=True) or {}
     
     # Strictly filter allowed fields (email is read-only)

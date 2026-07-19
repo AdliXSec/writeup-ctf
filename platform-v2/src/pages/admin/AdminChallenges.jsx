@@ -18,7 +18,8 @@ export default function AdminChallenges() {
     decay: 10,
     description: '',
     is_dynamic: false,
-    is_whitebox: false
+    is_whitebox: false,
+    level: 'Easy'
   });
   
   const [instanceFile, setInstanceFile] = useState(null);
@@ -69,6 +70,7 @@ export default function AdminChallenges() {
     data.append('description', formData.description);
     data.append('is_dynamic', formData.is_dynamic);
     data.append('is_whitebox', formData.is_whitebox);
+    data.append('level', formData.level);
     
     if (instanceFile) data.append('file', instanceFile);
     if (sourceFile) data.append('source_file', sourceFile);
@@ -91,7 +93,8 @@ export default function AdminChallenges() {
         decay: 10,
         description: '',
         is_dynamic: false,
-        is_whitebox: false
+        is_whitebox: false,
+        level: 'Easy'
       });
       setInstanceFile(null);
       setSourceFile(null);
@@ -133,7 +136,8 @@ export default function AdminChallenges() {
       decay: c.decay || 10,
       description: c.description,
       is_dynamic: c.is_dynamic,
-      is_whitebox: c.is_whitebox
+      is_whitebox: c.is_whitebox,
+      level: c.level || 'Easy'
     });
     setIsEditing(true);
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -149,7 +153,8 @@ export default function AdminChallenges() {
       decay: 10,
       description: '',
       is_dynamic: false,
-      is_whitebox: false
+      is_whitebox: false,
+      level: 'Easy'
     });
     setInstanceFile(null);
     setSourceFile(null);
@@ -192,6 +197,20 @@ export default function AdminChallenges() {
               <option>Cryptography</option>
               <option>Reverse Engineering</option>
               <option>Miscellaneous</option>
+            </select>
+          </div>
+          <div>
+            <label className="admin-label">Level</label>
+            <select 
+              className="admin-input" 
+              style={{ appearance: 'none' }}
+              value={formData.level}
+              onChange={e => setFormData({...formData, level: e.target.value})}
+            >
+              <option>Easy</option>
+              <option>Medium</option>
+              <option>Hard</option>
+              <option>Expert</option>
             </select>
           </div>
           <div>
@@ -334,6 +353,7 @@ export default function AdminChallenges() {
               <tr>
                 <th>Nama</th>
                 <th>Kategori</th>
+                <th>Level</th>
                 <th>Tipe</th>
                 <th>Points</th>
                 <th>Status</th>
@@ -347,6 +367,15 @@ export default function AdminChallenges() {
                 <tr key={c.id} style={{ opacity: c.is_hidden ? 0.5 : 1 }}>
                   <td><strong>{c.name}</strong></td>
                   <td className="text-cyan">{c.category}</td>
+                  <td>
+                    <span style={{
+                      padding: '2px 8px', borderRadius: '4px', fontSize: '0.8em',
+                      backgroundColor: c.level === 'Easy' ? 'rgba(16, 185, 129, 0.2)' : c.level === 'Medium' ? 'rgba(245, 158, 11, 0.2)' : c.level === 'Hard' ? 'rgba(239, 68, 68, 0.2)' : 'rgba(139, 92, 246, 0.2)',
+                      color: c.level === 'Easy' ? '#10b981' : c.level === 'Medium' ? '#f59e0b' : c.level === 'Hard' ? '#ef4444' : '#8b5cf6'
+                    }}>
+                      {c.level || 'Easy'}
+                    </span>
+                  </td>
                   <td>{c.is_whitebox ? 'Whitebox' : 'Blackbox'}</td>
                   <td className="mono">{c.points}</td>
                   <td>

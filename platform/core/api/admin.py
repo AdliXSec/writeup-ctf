@@ -283,6 +283,10 @@ def api_admin_add_challenge():
       - in: formData
         name: points
         type: integer
+      - in: formData
+        name: level
+        type: string
+        description: Challenge difficulty level (e.g., Easy, Medium, Hard, Expert)
     responses:
       200:
         description: Challenge created/updated
@@ -290,6 +294,7 @@ def api_admin_add_challenge():
     name = request.form.get('name')
     category = request.form.get('category')
     points = request.form.get('points', type=int)
+    level = request.form.get('level') or 'Easy'
     description = request.form.get('description')
     file = request.files.get('file')
     is_dynamic = 1 if str(request.form.get('is_dynamic')).lower() in ['true', '1'] else 0
@@ -347,8 +352,8 @@ def api_admin_add_challenge():
 
     try:
         conn.execute('''
-            INSERT INTO challenges (name, description, category, base_points, is_hidden, is_dynamic, is_whitebox, download_url, min_points, decay)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO challenges (name, description, category, base_points, is_hidden, is_dynamic, is_whitebox, download_url, min_points, decay, level)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ON CONFLICT(name) DO UPDATE SET
             description=excluded.description,
             category=excluded.category,
@@ -357,8 +362,9 @@ def api_admin_add_challenge():
             is_whitebox=excluded.is_whitebox,
             download_url=excluded.download_url,
             min_points=excluded.min_points,
-            decay=excluded.decay
-        ''', (name, description, category, points, 1, is_dynamic, is_whitebox, download_url, min_points, decay))
+            decay=excluded.decay,
+            level=excluded.level
+        ''', (name, description, category, points, 1, is_dynamic, is_whitebox, download_url, min_points, decay, level))
         conn.commit()
     except Exception as e:
         return jsonify({"error": str(e)}), 500

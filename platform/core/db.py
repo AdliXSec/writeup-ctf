@@ -53,7 +53,8 @@ def init_db():
                 is_whitebox BOOLEAN DEFAULT 0,
                 download_url TEXT,
                 min_points INTEGER DEFAULT 50,
-                decay INTEGER DEFAULT 10
+                decay INTEGER DEFAULT 10,
+                level TEXT DEFAULT 'Easy'
             );
             CREATE TABLE IF NOT EXISTS notifications (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -82,7 +83,8 @@ def init_db():
         "ALTER TABLE solves ADD COLUMN blood_tier INTEGER DEFAULT 0",
         "ALTER TABLE challenges ADD COLUMN is_whitebox BOOLEAN DEFAULT 0",
         "ALTER TABLE challenges ADD COLUMN download_url TEXT",
-        "ALTER TABLE users ADD COLUMN is_hidden BOOLEAN DEFAULT 0"
+        "ALTER TABLE users ADD COLUMN is_hidden BOOLEAN DEFAULT 0",
+        "ALTER TABLE challenges ADD COLUMN level TEXT DEFAULT 'Easy'"
     ]
     for mig in migrations:
         try:

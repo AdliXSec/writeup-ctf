@@ -62,6 +62,7 @@ def api_instance_start():
     resp = http_requests.post(
         f"{Config.INSTANCE_MANAGER_URL}/instances/start",
         json={"team_id": g.user['id'], "challenge": chal_name},
+        headers={"X-API-Key": Config.IM_API_KEY},
         timeout=120
     )
     return make_response(resp.content, resp.status_code)
@@ -94,6 +95,7 @@ def api_instance_stop():
     resp = http_requests.post(
         f"{Config.INSTANCE_MANAGER_URL}/instances/stop",
         json={"team_id": g.user['id'], "challenge": chal_name},
+        headers={"X-API-Key": Config.IM_API_KEY},
         timeout=10
     )
     return make_response(resp.content, resp.status_code)
@@ -128,6 +130,7 @@ def api_instance_extend():
     resp = http_requests.post(
         f"{Config.INSTANCE_MANAGER_URL}/instances/extend",
         json={"team_id": g.user['id'], "challenge": chal_name},
+        headers={"X-API-Key": Config.IM_API_KEY},
         timeout=10
     )
     return make_response(resp.content, resp.status_code)
@@ -162,11 +165,13 @@ def api_instance_reset():
     http_requests.post(
         f"{Config.INSTANCE_MANAGER_URL}/instances/stop",
         json={"team_id": g.user['id'], "challenge": chal_name},
+        headers={"X-API-Key": Config.IM_API_KEY},
         timeout=10
     )
     resp = http_requests.post(
         f"{Config.INSTANCE_MANAGER_URL}/instances/start",
         json={"team_id": g.user['id'], "challenge": chal_name},
+        headers={"X-API-Key": Config.IM_API_KEY},
         timeout=120
     )
     return make_response(resp.content, resp.status_code)

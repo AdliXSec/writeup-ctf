@@ -7,6 +7,7 @@ def im_provision(team_id):
         resp = http_requests.post(
             f"{Config.INSTANCE_MANAGER_URL}/provision",
             json={"team_id": team_id},
+            headers={"X-API-Key": Config.IM_API_KEY},
             timeout=120,
         )
         return resp.json()
@@ -18,6 +19,7 @@ def im_get_instances(team_id):
     try:
         resp = http_requests.get(
             f"{Config.INSTANCE_MANAGER_URL}/instances/{team_id}",
+            headers={"X-API-Key": Config.IM_API_KEY},
             timeout=10,
         )
         if resp.status_code == 200:
@@ -31,6 +33,7 @@ def im_get_all_flags():
     try:
         resp = http_requests.get(
             f"{Config.INSTANCE_MANAGER_URL}/all-flags",
+            headers={"X-API-Key": Config.IM_API_KEY},
             timeout=10,
         )
         if resp.status_code == 200:

@@ -3,6 +3,7 @@ import os
 class Config:
     DB_PATH = '/app/data/scoreboard.db'
     INSTANCE_MANAGER_URL = os.environ.get('INSTANCE_MANAGER_URL', 'http://ctf-instance-manager:9000')
+    IM_API_KEY = os.environ.get('IM_API_KEY', '')
 
 def get_or_create_secret():
     secret_path = '/app/data/secret.key'

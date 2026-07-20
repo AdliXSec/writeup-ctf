@@ -25,7 +25,7 @@ def api_admin_instances():
         description: List of running containers
     """
     try:
-        resp = http_requests.get(f"{Config.INSTANCE_MANAGER_URL}/instances", timeout=10)
+        resp = http_requests.get(f"{Config.INSTANCE_MANAGER_URL}/instances", headers={"X-API-Key": Config.IM_API_KEY}, timeout=10)
         im_data = resp.json()
     except Exception as e:
         return jsonify({"error": str(e)}), 500
@@ -77,6 +77,7 @@ def api_admin_stop_instance():
         resp = http_requests.post(
             f"{Config.INSTANCE_MANAGER_URL}/instances/stop",
             json={"team_id": team_id, "challenge": challenge},
+            headers={"X-API-Key": Config.IM_API_KEY},
             timeout=10
         )
         return make_response(resp.content, resp.status_code)
@@ -104,7 +105,7 @@ def api_admin_stats():
     total_solves = conn.execute("SELECT COUNT(*) FROM solves").fetchone()[0]
     
     try:
-        im_stats = http_requests.get(f"{Config.INSTANCE_MANAGER_URL}/stats", timeout=5).json()
+        im_stats = http_requests.get(f"{Config.INSTANCE_MANAGER_URL}/stats", headers={"X-API-Key": Config.IM_API_KEY}, timeout=5).json()
     except Exception:
         im_stats = {"error": "Unreachable", "active_instances": 0, "docker_containers_running": 0}
         
@@ -217,7 +218,7 @@ def api_admin_toggle_ban(user_id):
     
     if new_status == 1:
         try:
-            http_requests.post(f"{Config.INSTANCE_MANAGER_URL}/instances/{user_id}/stop_all", timeout=10)
+            http_requests.post(f"{Config.INSTANCE_MANAGER_URL}/instances/{user_id}/stop_all", headers={"X-API-Key": Config.IM_API_KEY}, timeout=10)
         except Exception:
             pass
             
@@ -318,7 +319,7 @@ def api_admin_add_challenge():
             file_content = file.read()
             files = {'file': (file.filename, file_content, file.mimetype)}
             data = {'name': name}
-            r = http_requests.post(f"{Config.INSTANCE_MANAGER_URL}/admin/build", data=data, files=files, timeout=300)
+            r = http_requests.post(f"{Config.INSTANCE_MANAGER_URL}/admin/build", data=data, files=files, headers={"X-API-Key": Config.IM_API_KEY}, timeout=300)
             
             if r.status_code != 200:
                 return jsonify({"error": f"Instance Manager Error: {r.text}"}), r.status_code
@@ -391,7 +392,7 @@ def api_admin_delete_challenge(name):
         description: Challenge deleted
     """
     try:
-        r = http_requests.delete(f"{Config.INSTANCE_MANAGER_URL}/admin/build/{name}", timeout=60)
+        r = http_requests.delete(f"{Config.INSTANCE_MANAGER_URL}/admin/build/{name}", headers={"X-API-Key": Config.IM_API_KEY}, timeout=60)
         if r.status_code != 200:
             return jsonify({"error": f"Instance Manager Error: {r.text}"}), r.status_code
     except Exception as e:
@@ -613,7 +614,7 @@ def api_admin_update_settings():
         # If game is paused, proactively kill all active instances
         if is_paused == 1:
             try:
-                http_requests.post(f"{Config.INSTANCE_MANAGER_URL}/instances/kill_all", timeout=10)
+                http_requests.post(f"{Config.INSTANCE_MANAGER_URL}/instances/kill_all", headers={"X-API-Key": Config.IM_API_KEY}, timeout=10)
             except Exception as im_e:
                 print("Failed to kill instances on pause:", im_e)
                 

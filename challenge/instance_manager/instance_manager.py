@@ -25,6 +25,7 @@ PORT_BASE = int(os.environ.get("PORT_BASE", 10000))
 PORT_BLOCK = int(os.environ.get("PORT_BLOCK", 100))
 MAX_TEAMS = int(os.environ.get("MAX_TEAMS", 100))
 NETWORK_NAME = os.environ.get("NETWORK_NAME", "ctf-net")
+IM_API_KEY = os.environ.get("IM_API_KEY", "default-dev-key")
 
 DEFAULT_DURATION = timedelta(minutes=10)
 EXTEND_DURATION = timedelta(minutes=5)
@@ -472,6 +473,14 @@ def start_reaper():
 # ---------------------------------------------------------------------------
 # API Endpoints
 # ---------------------------------------------------------------------------
+
+@app.before_request
+def require_api_key():
+    if request.endpoint and request.endpoint != 'health':
+        key = request.headers.get("X-API-Key")
+        if key != IM_API_KEY:
+            log.warning(f"Unauthorized access attempt to {request.path}")
+            return jsonify({"error": "Unauthorized Access"}), 401
 @app.route("/health", methods=["GET"])
 def health():
     return jsonify({"status": "ok", "challenges": len(CHALLENGES), "max_teams": MAX_TEAMS})

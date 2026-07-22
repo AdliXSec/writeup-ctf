@@ -1,4 +1,5 @@
 import sqlite3
+import os
 from flask import g
 from werkzeug.security import generate_password_hash
 from config import Config
@@ -29,7 +30,8 @@ def init_db():
                 password TEXT NOT NULL,
                 is_admin BOOLEAN DEFAULT 0,
                 is_banned BOOLEAN DEFAULT 0,
-                is_hidden BOOLEAN DEFAULT 0
+                is_hidden BOOLEAN DEFAULT 0,
+                must_change_password BOOLEAN DEFAULT 0
             );
             CREATE TABLE IF NOT EXISTS solves (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -84,6 +86,7 @@ def init_db():
         "ALTER TABLE challenges ADD COLUMN is_whitebox BOOLEAN DEFAULT 0",
         "ALTER TABLE challenges ADD COLUMN download_url TEXT",
         "ALTER TABLE users ADD COLUMN is_hidden BOOLEAN DEFAULT 0",
+        "ALTER TABLE users ADD COLUMN must_change_password BOOLEAN DEFAULT 0",
         "ALTER TABLE challenges ADD COLUMN level TEXT DEFAULT 'Easy'"
     ]
     for mig in migrations:
@@ -100,8 +103,18 @@ def init_db():
         pass
         
     try:
-        hashed = generate_password_hash("0xL33XYAdliXSec12!@")
-        conn.execute('INSERT INTO users (username, password, is_admin) VALUES (?, ?, ?)', ('admin', hashed, 1))
+        import secrets as _secrets
+        admin_pw = os.environ.get('ADMIN_PASSWORD')
+        must_change = 0
+        if not admin_pw:
+            admin_pw = _secrets.token_urlsafe(16)
+            must_change = 1
+            print(f"\n{'='*60}")
+            print(f"  [!] AUTO-GENERATED ADMIN PASSWORD: {admin_pw}")
+            print(f"  [!] Set ADMIN_PASSWORD env var to use a custom password.")
+            print(f"{'='*60}\n")
+        hashed = generate_password_hash(admin_pw)
+        conn.execute('INSERT INTO users (username, email, password, is_admin, must_change_password) VALUES (?, ?, ?, ?, ?)', ('admin', 'admin@local', hashed, 1, must_change))
         conn.commit()
     except sqlite3.IntegrityError:
         pass

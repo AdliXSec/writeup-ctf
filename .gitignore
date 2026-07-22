@@ -26,3 +26,12 @@ cve-CVE-2026-31431
 # Challenge generators and bundles
 create_*.py
 *.zip
+
+instance_manager_security_audit.md
+security_audit_report.md
+
+# Python
+venv/
+__pycache__/
+*.pyc
+platform/data/

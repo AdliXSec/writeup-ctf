@@ -120,7 +120,7 @@ export default function ChallengeModal({ challenge, onClose, onRefresh }) {
         <div className="modal-body">
           <div className="challenge-desc">
             <h4 className="text-cyan mb-2">INTEL</h4>
-            <p className="text-muted" dangerouslySetInnerHTML={{ __html: challenge.description }} />
+            <p className="text-muted">{challenge.description}</p>
           </div>
 
           <div className="instance-control glass-panel">

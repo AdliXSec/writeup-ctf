@@ -3,14 +3,17 @@ import datetime
 from flask import Blueprint, request, jsonify, g
 from werkzeug.security import check_password_hash, generate_password_hash
 import sqlite3
+import re
 
 from config import Config
 from core.db import get_db
 from core.decorators import jwt_required
+from core.limiter import limiter
 
 auth_bp = Blueprint('auth_api', __name__, url_prefix='/api/v2')
 
 @auth_bp.route('/authenticate', methods=['POST'])
+@limiter.limit("5 per minute")
 def api_authenticate():
     """
     Authenticate User (Player)
@@ -140,6 +143,7 @@ def api_session():
     })
 
 @auth_bp.route('/register', methods=['POST'])
+@limiter.limit("3 per minute")
 def api_register():
     """
     Register New Player
@@ -178,6 +182,17 @@ def api_register():
     username = data['username']
     email = data['email']
     password = data['password']
+    
+    # Validation (VULN-04, VULN-05)
+    if len(password) < 8:
+        return jsonify({"type": "about:blank", "title": "Bad Request", "status": 400, "detail": "Password minimal 8 karakter"}), 400
+    if len(username) > 32:
+        return jsonify({"type": "about:blank", "title": "Bad Request", "status": 400, "detail": "Username maksimal 32 karakter"}), 400
+    if not re.match(r'^[a-zA-Z0-9_-]+$', username):
+        return jsonify({"type": "about:blank", "title": "Bad Request", "status": 400, "detail": "Username hanya boleh alfanumerik, dash, underscore"}), 400
+    if not re.match(r'^[^@]+@[^@]+\.[^@]+$', email):
+        return jsonify({"type": "about:blank", "title": "Bad Request", "status": 400, "detail": "Format email tidak valid"}), 400
+        
     hashed = generate_password_hash(password)
     
     conn = get_db()
@@ -242,6 +257,13 @@ def api_update_profile():
     
     # Email is strictly immutable, so we don't process it anymore.
             
+    # Check if username is valid
+    if username:
+        if len(username) > 32:
+            return jsonify({"type": "about:blank", "title": "Bad Request", "status": 400, "detail": "Username maksimal 32 karakter"}), 400
+        if not re.match(r'^[a-zA-Z0-9_-]+$', username):
+            return jsonify({"type": "about:blank", "title": "Bad Request", "status": 400, "detail": "Username hanya boleh alfanumerik, dash, underscore"}), 400
+        
     # Check if username is used by another account
     if username:
         existing_user = conn.execute('SELECT id FROM users WHERE username = ? AND id != ?', (username, g.user['id'])).fetchone()
@@ -250,16 +272,18 @@ def api_update_profile():
             
     try:
         if password:
+            if len(password) < 8:
+                return jsonify({"type": "about:blank", "title": "Bad Request", "status": 400, "detail": "Password minimal 8 karakter"}), 400
             hashed = generate_password_hash(password)
             conn.execute('''
                 UPDATE users 
-                SET website = ?, affiliation = ?, country = ?, username = COALESCE(?, username), password = ?
+                SET website = COALESCE(?, website), affiliation = COALESCE(?, affiliation), country = COALESCE(?, country), username = COALESCE(?, username), password = ?, must_change_password = 0
                 WHERE id = ?
             ''', (website, affiliation, country, username, hashed, g.user['id']))
         else:
             conn.execute('''
                 UPDATE users 
-                SET website = ?, affiliation = ?, country = ?, username = COALESCE(?, username)
+                SET website = COALESCE(?, website), affiliation = COALESCE(?, affiliation), country = COALESCE(?, country), username = COALESCE(?, username)
                 WHERE id = ?
             ''', (website, affiliation, country, username, g.user['id']))
             

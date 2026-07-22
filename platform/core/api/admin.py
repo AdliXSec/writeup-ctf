@@ -3,6 +3,9 @@ import requests as http_requests
 from flask import Blueprint, request, jsonify, make_response
 from werkzeug.utils import secure_filename
 from werkzeug.security import generate_password_hash
+import logging
+
+logger = logging.getLogger(__name__)
 
 from config import Config
 from core.db import get_db
@@ -28,7 +31,8 @@ def api_admin_instances():
         resp = http_requests.get(f"{Config.INSTANCE_MANAGER_URL}/instances", headers={"X-API-Key": Config.IM_API_KEY}, timeout=10)
         im_data = resp.json()
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        logger.exception("Internal error in api_admin_instances")
+        return jsonify({"error": "Internal server error"}), 500
         
     conn = get_db()
     users = conn.execute("SELECT id, username FROM users").fetchall()
@@ -182,7 +186,8 @@ def api_admin_create_admin():
         conn.execute("INSERT INTO users (username, email, password, is_admin) VALUES (?, ?, ?, 1)", (username, email, hashed))
         conn.commit()
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        logger.exception("Internal error in api_create_admin")
+        return jsonify({"error": "Internal server error"}), 500
         
     return jsonify({"status": "success", "message": "Admin user created successfully"}), 201
 

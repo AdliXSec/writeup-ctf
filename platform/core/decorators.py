@@ -25,6 +25,8 @@ def jwt_required(f):
             g.user = user
             if g.user['is_banned']:
                 return jsonify({"type": "about:blank", "title": "Forbidden", "status": 403, "detail": "Your account has been banned."}), 403
+            if g.user['must_change_password'] and request.endpoint != 'auth.api_update_profile':
+                return jsonify({"type": "about:blank", "title": "Forbidden", "status": 403, "detail": "You must change your auto-generated password first."}), 403
         except Exception as e:
             return jsonify({"type": "about:blank", "title": "Unauthorized", "status": 401, "detail": "Invalid or expired token"}), 401
             
@@ -54,6 +56,8 @@ def admin_required(f):
             g.user = user
             if g.user['is_banned']:
                 return jsonify({"error": "Admin account banned"}), 403
+            if g.user['must_change_password'] and request.endpoint != 'auth.api_update_profile':
+                return jsonify({"error": "You must change your auto-generated password first."}), 403
         except Exception as e:
             return jsonify({"error": "Invalid or expired token"}), 401
             

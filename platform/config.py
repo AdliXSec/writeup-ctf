@@ -19,5 +19,8 @@ def get_or_create_secret():
         return f.read().strip()
 
 _persistent_secret = get_or_create_secret()
-Config.SECRET_KEY = os.environ.get('FLASK_SECRET', _persistent_secret)
-Config.JWT_SECRET = os.environ.get('JWT_SECRET', _persistent_secret)
+flask_sec = os.environ.get('FLASK_SECRET')
+jwt_sec = os.environ.get('JWT_SECRET')
+
+Config.SECRET_KEY = flask_sec if flask_sec and 'your_super_secret' not in flask_sec else _persistent_secret
+Config.JWT_SECRET = jwt_sec if jwt_sec and 'your_super_secret' not in jwt_sec else _persistent_secret

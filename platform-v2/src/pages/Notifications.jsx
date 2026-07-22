@@ -49,7 +49,7 @@ export default function Notifications() {
                 <span className="notification-title">{notif.title}</span>
                 <span className="notification-time mono text-muted">{formatDate(notif.created_at)}</span>
               </div>
-              <div className="notification-body" dangerouslySetInnerHTML={{ __html: notif.message }}></div>
+              <div className="notification-body">{notif.message}</div>
             </div>
           ))
         ) : (

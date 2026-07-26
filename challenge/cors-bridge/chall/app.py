@@ -53,6 +53,23 @@ INDEX_HTML = """
 def index():
     return render_template_string(INDEX_HTML)
 
+# Internal endpoint: bot visits this to get its admin cookie set via Set-Cookie header.
+# This is NOT exposed as a hint to players — it's just how the bot authenticates.
+@app.route('/internal/bot-login')
+def bot_login():
+    resp = make_response("OK")
+    # SameSite=None allows the cookie to be sent on cross-origin requests.
+    # Secure=True is REQUIRED by Chromium for SameSite=None cookies.
+    # This works over HTTP because 127.0.0.1 is a "secure context" in Chromium.
+    resp.set_cookie(
+        'session', ADMIN_COOKIE,
+        samesite='None',
+        secure=True,
+        path='/',
+        httponly=False,
+    )
+    return resp
+
 @app.route('/api/flag', methods=['GET', 'OPTIONS'])
 def api_flag():
     # VULNERABILITY: Blindly reflect Origin and allow credentials

@@ -2,7 +2,7 @@
   "name": "cors-bridge",
   "internal_port": 8000,
   "flag_desc": "cors_origin_stolen",
-  "read_only": true,
+  "read_only": false,
   "tmpfs": {
     "/tmp": "",
     "/var/run": ""

@@ -73,6 +73,10 @@ export default function Register() {
                 value={username}
                 onChange={e => setUsername(e.target.value)}
                 autoComplete="off"
+                minLength={3}
+                maxLength={32}
+                pattern="^[a-zA-Z0-9_-]+$"
+                title="Username hanya boleh berisi huruf, angka, strip (-), dan garis bawah (_)"
                 required 
               />
             </div>

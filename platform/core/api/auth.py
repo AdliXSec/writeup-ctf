@@ -186,8 +186,8 @@ def api_register():
     # Validation (VULN-04, VULN-05)
     if len(password) < 8:
         return jsonify({"type": "about:blank", "title": "Bad Request", "status": 400, "detail": "Password minimal 8 karakter"}), 400
-    if len(username) > 32:
-        return jsonify({"type": "about:blank", "title": "Bad Request", "status": 400, "detail": "Username maksimal 32 karakter"}), 400
+    if len(username) < 3 or len(username) > 32:
+        return jsonify({"type": "about:blank", "title": "Bad Request", "status": 400, "detail": "Username harus antara 3 - 32 karakter"}), 400
     if not re.match(r'^[a-zA-Z0-9_-]+$', username):
         return jsonify({"type": "about:blank", "title": "Bad Request", "status": 400, "detail": "Username hanya boleh alfanumerik, dash, underscore"}), 400
     if not re.match(r'^[^@]+@[^@]+\.[^@]+$', email):

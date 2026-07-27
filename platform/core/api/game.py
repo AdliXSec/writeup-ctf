@@ -249,7 +249,6 @@ def api_challenges():
     return jsonify(chal_list)
 
 @game_bp.route('/game/status', methods=['GET'])
-@jwt_required
 def api_game_status():
     """
     Get Game Status

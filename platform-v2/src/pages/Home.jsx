@@ -1,40 +1,71 @@
 import React, { useState, useEffect } from 'react';
 import Hero from '../components/Hero';
+import api from '../utils/api';
 import './Home.css';
 
 export default function Home() {
-  // Dummy countdown state
+  const [timerTitle, setTimerTitle] = useState('Competition Status');
   const [timeLeft, setTimeLeft] = useState({
-    days: 2,
-    hours: 14,
-    minutes: 35,
-    seconds: 50
+    days: 0,
+    hours: 0,
+    minutes: 0,
+    seconds: 0
   });
 
   useEffect(() => {
-    const timer = setInterval(() => {
-      setTimeLeft(prev => {
-        let { days, hours, minutes, seconds } = prev;
-        if (seconds > 0) {
-          seconds--;
-        } else {
-          seconds = 59;
-          if (minutes > 0) {
-            minutes--;
+    let interval;
+    const fetchStatus = async () => {
+      try {
+        const res = await api.get('/game/status');
+        const match = res.data.match;
+        
+        // Backend returns "YYYY-MM-DD HH:MM:SS" in UTC. Append Z to parse correctly.
+        const startTimeStr = match.started_at ? match.started_at.replace(' ', 'T') + 'Z' : null;
+        const endTimeStr = match.end_time ? match.end_time.replace(' ', 'T') + 'Z' : null;
+
+        const startTime = startTimeStr ? new Date(startTimeStr).getTime() : null;
+        const endTime = endTimeStr ? new Date(endTimeStr).getTime() : null;
+
+        interval = setInterval(() => {
+          const now = new Date().getTime();
+          let target = null;
+
+          if (startTime && now < startTime) {
+            setTimerTitle('Competition Starts In');
+            target = startTime;
+          } else if (endTime && now < endTime) {
+            setTimerTitle('Competition Ends In');
+            target = endTime;
+          } else if (endTime && now >= endTime) {
+            setTimerTitle('Competition Has Ended');
+            target = null;
+          } else if (startTime && !endTime) {
+            setTimerTitle('Competition Is Live');
+            target = null;
           } else {
-            minutes = 59;
-            if (hours > 0) {
-              hours--;
-            } else {
-              hours = 23;
-              if (days > 0) days--;
-            }
+            setTimerTitle('Schedule TBA');
+            target = null;
           }
-        }
-        return { days, hours, minutes, seconds };
-      });
-    }, 1000);
-    return () => clearInterval(timer);
+
+          if (target) {
+            const distance = target - now;
+            setTimeLeft({
+              days: Math.floor(distance / (1000 * 60 * 60 * 24)),
+              hours: Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)),
+              minutes: Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60)),
+              seconds: Math.floor((distance % (1000 * 60)) / 1000)
+            });
+          } else {
+            setTimeLeft({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+          }
+        }, 1000);
+      } catch (err) {
+        console.error("Failed to fetch game status", err);
+      }
+    };
+    
+    fetchStatus();
+    return () => { if (interval) clearInterval(interval); };
   }, []);
 
   return (
@@ -95,7 +126,7 @@ export default function Home() {
           
           {/* Countdown Timer */}
           <div className="time-section glass-panel">
-            <h3 className="text-center text-magenta font-bold mb-2">Competition Ends In</h3>
+            <h3 className="text-center text-magenta font-bold mb-2">{timerTitle}</h3>
             <div className="countdown-wrapper mono">
               <div className="countdown-box">
                 <span className="countdown-val">{String(timeLeft.days).padStart(2, '0')}</span>

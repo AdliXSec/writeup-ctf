@@ -86,6 +86,20 @@ export default function AdminUsers() {
     }
   };
 
+  const handleToggleApprove = async (userId) => {
+    try {
+      const res = await api.put(`/admin/users/${userId}/toggle-approve`);
+      addToast(
+        res.data.is_approved === 1 ? 'success' : 'warning', 
+        res.data.is_approved === 1 ? 'Approved' : 'Unapproved', 
+        `Status persetujuan pengguna berhasil diubah.`
+      );
+      fetchData();
+    } catch (err) {
+      addToast('error', 'Gagal', err.response?.data?.error || err.message);
+    }
+  };
+
   const handleDeleteUser = async (userId, username) => {
     if (!window.confirm(`Yakin ingin MENGHAPUS permanen pengguna ${username}? Semua riwayat solve dan skornya akan hilang.`)) {
       return;
@@ -207,8 +221,10 @@ export default function AdminUsers() {
                   <td>
                     {u.is_banned ? (
                       <span className="text-red font-bold">BANNED</span>
+                    ) : !u.is_approved ? (
+                      <span className="text-yellow font-bold">PENDING</span>
                     ) : u.is_hidden ? (
-                      <span className="text-yellow font-bold">HIDDEN</span>
+                      <span className="text-muted font-bold">HIDDEN</span>
                     ) : (
                       <span className="text-emerald">ACTIVE</span>
                     )}
@@ -230,6 +246,14 @@ export default function AdminUsers() {
                           onClick={() => handleToggleBan(u.id)}
                         >
                           {u.is_banned ? 'UNBAN' : 'BAN'}
+                        </button>
+                        
+                        <button 
+                          className="btn-admin-action" 
+                          style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem', borderColor: !u.is_approved ? 'var(--accent-emerald)' : 'var(--admin-yellow)', color: !u.is_approved ? 'var(--accent-emerald)' : 'var(--admin-yellow)' }}
+                          onClick={() => handleToggleApprove(u.id)}
+                        >
+                          {!u.is_approved ? 'APPROVE' : 'UNAPPROVE'}
                         </button>
                         
                         <button 

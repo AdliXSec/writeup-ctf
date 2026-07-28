@@ -57,6 +57,8 @@ def api_authenticate():
     if user and check_password_hash(user['password'], password):
         if user['is_banned']:
             return jsonify({"type": "about:blank", "title": "Forbidden", "status": 403, "detail": "Your account has been banned."}), 403
+        if not user['is_approved']:
+            return jsonify({"type": "about:blank", "title": "Forbidden", "status": 403, "detail": "Akun Anda sedang menunggu persetujuan Admin."}), 403
         token = jwt.encode({
             'user_id': user['id'],
             'exp': datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(hours=24)

@@ -31,7 +31,8 @@ def init_db():
                 is_admin BOOLEAN DEFAULT 0,
                 is_banned BOOLEAN DEFAULT 0,
                 is_hidden BOOLEAN DEFAULT 0,
-                must_change_password BOOLEAN DEFAULT 0
+                must_change_password BOOLEAN DEFAULT 0,
+                is_approved BOOLEAN DEFAULT 0
             );
             CREATE TABLE IF NOT EXISTS solves (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -101,6 +102,14 @@ def init_db():
         conn.commit()
     except sqlite3.OperationalError:
         pass
+
+    try:
+        conn.execute("ALTER TABLE users ADD COLUMN is_approved BOOLEAN DEFAULT 0")
+        # If this is the first time the column is added, approve all existing users
+        conn.execute("UPDATE users SET is_approved = 1")
+        conn.commit()
+    except sqlite3.OperationalError:
+        pass
         
     try:
         import secrets as _secrets
@@ -114,7 +123,7 @@ def init_db():
             print(f"  [!] Set ADMIN_PASSWORD env var to use a custom password.")
             print(f"{'='*60}\n")
         hashed = generate_password_hash(admin_pw)
-        conn.execute('INSERT INTO users (username, email, password, is_admin, must_change_password) VALUES (?, ?, ?, ?, ?)', ('admin', 'admin@local', hashed, 1, must_change))
+        conn.execute('INSERT INTO users (username, email, password, is_admin, must_change_password, is_approved) VALUES (?, ?, ?, ?, ?, 1)', ('admin', 'admin@local', hashed, 1, must_change))
         conn.commit()
     except sqlite3.IntegrityError:
         pass

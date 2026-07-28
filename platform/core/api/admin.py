@@ -1,4 +1,5 @@
 import os
+import sqlite3
 import requests as http_requests
 from flask import Blueprint, request, jsonify, make_response
 from werkzeug.utils import secure_filename
@@ -135,11 +136,11 @@ def api_admin_users():
     """
     conn = get_db()
     try:
-        users = conn.execute("SELECT id, username, is_admin, is_banned, is_hidden FROM users").fetchall()
-        res = [{"id": u["id"], "username": u["username"], "is_admin": bool(u["is_admin"]), "is_banned": bool(u["is_banned"]), "is_hidden": bool(u["is_hidden"])} for u in users]
+        users = conn.execute("SELECT id, username, is_admin, is_banned, is_hidden, is_approved FROM users").fetchall()
+        res = [{"id": u["id"], "username": u["username"], "is_admin": bool(u["is_admin"]), "is_banned": bool(u["is_banned"]), "is_hidden": bool(u["is_hidden"]), "is_approved": bool(u["is_approved"])} for u in users]
     except sqlite3.OperationalError:
         users = conn.execute("SELECT id, username, is_admin, is_banned FROM users").fetchall()
-        res = [{"id": u["id"], "username": u["username"], "is_admin": bool(u["is_admin"]), "is_banned": bool(u["is_banned"]), "is_hidden": False} for u in users]
+        res = [{"id": u["id"], "username": u["username"], "is_admin": bool(u["is_admin"]), "is_banned": bool(u["is_banned"]), "is_hidden": False, "is_approved": True} for u in users]
     return jsonify(res)
 
 @admin_bp.route('/users', methods=['POST'])
@@ -228,6 +229,39 @@ def api_admin_toggle_ban(user_id):
             pass
             
     return jsonify({"status": "success", "is_banned": new_status})
+
+@admin_bp.route('/users/<int:user_id>/toggle-approve', methods=['PUT'])
+@admin_required
+def api_admin_toggle_approve(user_id):
+    """
+    Toggle User Approval
+    ---
+    tags:
+      - Admin Users
+    security:
+      - Bearer: []
+    parameters:
+      - name: user_id
+        in: path
+        type: integer
+        required: true
+    responses:
+      200:
+        description: User approval toggled
+    """
+    conn = get_db()
+    user = conn.execute("SELECT is_approved, is_admin FROM users WHERE id = ?", (user_id,)).fetchone()
+    if not user:
+        return jsonify({"error": "User not found"}), 404
+    if user['is_admin']:
+        return jsonify({"error": "Admin users are always approved"}), 400
+        
+    new_status = 0 if user['is_approved'] else 1
+    conn.execute("UPDATE users SET is_approved = ? WHERE id = ?", (new_status, user_id))
+    conn.commit()
+    
+    return jsonify({"status": "success", "is_approved": new_status})
+
 
 @admin_bp.route('/users/<int:user_id>/toggle-hide', methods=['PUT'])
 @admin_required
